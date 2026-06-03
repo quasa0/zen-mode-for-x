@@ -4,17 +4,23 @@ import addStyles, { removeStyles } from "../utilities/addStyles";
 const BUTTON_CLASS = "mt-ai-slop-button";
 const CONTROL_CLASS = "mt-ai-slop-control";
 const TWEET_CLASS = "mt-ai-slop-tweet";
+const COUNTDOWN_RING_CLASS = "mt-ai-slop-countdown-ring";
+const REPORTED_CLASS = "mt-ai-slop-reported";
+const REPORTED_NOTICE_CLASS = "mt-ai-slop-reported-notice";
+const REPORTED_VIEW_BUTTON_CLASS = "mt-ai-slop-reported-view-button";
 const STYLE_ID = "aiSlopButton";
 const DIALOG_SELECTOR = '[role="dialog"]';
 const MENU_SELECTOR = '[role="menu"]';
 const ACTION_SELECTOR = 'button, [role="button"], [role="menuitem"], [role="radio"], label, [tabindex="0"]';
 const AI_SLOP_ICON_PATHS = [
-  "M16.4833 22.2777C16.3184 23.3047 15.508 23.996 14.4943 23.9961C12.2459 23.9964 9.99752 23.9975 7.74914 24C6.56047 24.0013 5.69754 23.1776 5.73401 21.9847C5.75153 21.4113 5.61855 21.1064 5.06297 20.8144C3.65508 20.0743 2.93385 18.8233 2.80853 17.2352C2.80503 17.1908 2.79701 17.1468 2.79223 17.1111C1.35444 16.9004 0.415209 16.1096 0.133396 14.6992C-0.0997623 13.5323 -0.0896994 12.3537 0.677551 11.3239C1.20367 10.6177 1.90879 10.2316 2.777 10.1557C2.81573 9.77423 2.82899 9.39645 2.89571 9.02837C3.23145 7.17648 4.78465 5.67963 6.64471 5.50386C7.64359 5.40947 8.65598 5.4571 9.66231 5.44319C9.98418 5.43874 10.3062 5.44249 10.6565 5.44249C10.6565 4.87803 10.6618 4.33538 10.6489 3.79317C10.6475 3.73422 10.5518 3.6493 10.4826 3.62435C9.19952 3.16192 8.78866 1.6044 9.71268 0.600048C10.3591 -0.102542 11.5065 -0.252143 12.3543 0.496813C13.0623 1.12234 13.1825 2.30062 12.5438 3.01395C12.3197 3.26412 11.9843 3.41329 11.7054 3.6163C11.6282 3.67246 11.5162 3.75468 11.5139 3.82788C11.4974 4.35428 11.5051 4.88144 11.5051 5.4464C11.6146 5.4464 11.7128 5.44651 11.811 5.44638C12.8473 5.44501 13.8835 5.44344 14.9198 5.44222C17.0057 5.43976 18.8152 6.86773 19.27 8.90174C19.3596 9.30208 19.3602 9.7223 19.4037 10.1514C20.302 10.224 21.0324 10.6461 21.5613 11.3963C21.9359 11.9276 22.1268 12.528 22.1329 13.1823C22.1391 13.8453 22.1649 14.5103 21.9245 15.1475C21.5006 16.2709 20.6578 16.9274 19.4564 17.1011C19.3109 17.6507 19.2208 18.1997 19.0202 18.7048C18.5849 19.8015 17.794 20.5814 16.7051 21.0435C16.5419 21.1127 16.4843 21.1923 16.4923 21.3667C16.5058 21.6619 16.4923 21.9583 16.4833 22.2777ZM4.38193 7.76317C3.91565 8.37749 3.65534 9.07104 3.65163 9.84099C3.64156 11.9317 3.64874 14.0225 3.64927 16.1133C3.64936 16.4833 3.61835 16.8566 3.65628 17.2228C3.86038 19.1927 5.39731 20.5576 7.38412 20.5568C9.89118 20.5558 12.3982 20.5561 14.9053 20.5585C16.8818 20.5604 18.5304 18.9171 18.5289 16.947C18.5272 14.6342 18.5265 12.3214 18.5311 10.0086C18.5351 7.94848 16.98 6.33381 14.9127 6.31358C12.4151 6.28915 9.91716 6.30061 7.41936 6.30238C6.19237 6.30325 5.17264 6.75402 4.38193 7.76317ZM9.83428 21.4201C8.74953 21.4201 7.66478 21.4201 6.5589 21.4201C6.5589 21.5898 6.55923 21.7646 6.55884 21.9393C6.55725 22.6498 7.03916 23.1458 7.75049 23.1567C8.12949 23.1626 8.50869 23.155 8.8878 23.1552C10.7279 23.1558 12.568 23.1583 14.408 23.1572C15.0587 23.1568 15.5865 22.7194 15.646 22.1191C15.6702 21.8751 15.65 21.6266 15.65 21.4203C13.7113 21.4203 11.8006 21.4203 9.83428 21.4201ZM20.2185 15.9382C20.5878 15.7196 20.8453 15.407 21.0361 15.0234C21.3027 14.4875 21.283 13.916 21.2834 13.345C21.2837 12.8549 21.1659 12.395 20.9014 11.9794C20.55 11.4273 20.0507 11.1086 19.3859 11.0186C19.3859 12.7654 19.3859 14.4867 19.3859 16.2776C19.6796 16.1618 19.9325 16.062 20.2185 15.9382ZM2.0614 11.2596C1.68756 11.4656 1.39456 11.7503 1.1994 12.1336C0.754387 13.0074 0.773388 13.923 1.06141 14.8161C1.32132 15.622 1.92839 16.0944 2.79558 16.2257C2.79558 14.4817 2.79558 12.7591 2.79558 10.986C2.54136 11.0771 2.3188 11.157 2.0614 11.2596ZM11.4118 2.81407C11.4692 2.78495 11.5281 2.75844 11.5838 2.72629C12.0821 2.4385 12.2508 1.84441 11.9699 1.3692C11.6867 0.889917 11.0476 0.72657 10.5706 1.01151C10.1335 1.27256 9.96197 1.76158 10.1436 2.2286C10.326 2.69769 10.8287 2.94232 11.4118 2.81407Z",
-  "M13.5231 11.8741C14.3331 11.2084 15.4353 11.2987 16.0897 12.0706C16.7127 12.8055 16.6094 13.8818 15.8518 14.5504C15.1564 15.164 14.0498 15.1008 13.4004 14.4103C12.7217 13.6887 12.7676 12.6089 13.5231 11.8741ZM15.5295 13.6137C15.7225 13.2419 15.6661 12.8915 15.3945 12.5926C15.1501 12.3237 14.8355 12.2154 14.4689 12.3226C14.099 12.4308 13.8703 12.6726 13.794 13.049C13.7122 13.4522 13.9456 13.8682 14.336 14.0342C14.7789 14.2225 15.2055 14.0839 15.5295 13.6137Z",
-  "M8.11876 14.8622C7.18019 15.1569 6.27219 14.7823 5.88111 13.9556C5.51822 13.1886 5.78163 12.2155 6.47889 11.7474C7.35419 11.1597 8.51474 11.4106 9.02759 12.2983C9.56081 13.2212 9.20132 14.3382 8.21523 14.8217C8.19045 14.8338 8.16429 14.8432 8.11876 14.8622ZM7.50171 14.1102C7.97579 14.0694 8.28726 13.8175 8.39707 13.386C8.48375 13.0454 8.32145 12.6496 8.01266 12.4485C7.66266 12.2205 7.26277 12.2332 6.92941 12.483C6.64312 12.6975 6.50184 13.0876 6.59142 13.4162C6.70192 13.8216 6.99701 14.059 7.50171 14.1102Z",
-  "M10.2506 17.8965C9.82523 17.8968 9.42754 17.8999 9.02991 17.8965C8.72549 17.8938 8.55676 17.7407 8.55452 17.4766C8.55245 17.2328 8.74512 17.0554 9.03506 17.0549C10.413 17.0522 11.791 17.0522 13.1689 17.0561C13.4472 17.0569 13.6233 17.2253 13.6275 17.4681C13.6322 17.7318 13.463 17.8961 13.1638 17.897C12.202 17.9 11.2402 17.8971 10.2506 17.8965Z",
+  "M12.5771 0.0207988C13.6947 0.287943 14.3854 0.969029 14.6448 2.07458C14.9188 3.24291 14.2004 4.60029 12.9257 5.02293C12.8198 5.05805 12.7816 5.09675 12.7828 5.2101C12.7889 5.77474 12.7856 6.33948 12.7856 6.92736C12.8841 6.92736 12.9688 6.92739 13.0535 6.92736C14.3574 6.92689 15.6613 6.92837 16.9653 6.92549C18.956 6.9211 20.781 8.47885 21.0734 10.4477C21.1272 10.8096 21.1348 11.1783 21.1647 11.5559C21.6477 11.5357 22.124 11.6173 22.5591 11.847C23.6099 12.4018 24.1759 13.2736 24.211 14.4698C24.2236 14.9022 24.2124 15.3352 24.2126 15.7679C24.2134 17.4461 22.9211 18.7522 21.2432 18.7685C21.2153 18.7688 21.1874 18.7685 21.1397 18.7685C21.1397 19.0878 21.1418 19.3971 21.1393 19.7063C21.1226 21.7759 19.6655 23.4577 17.8219 23.8926C17.5606 23.9542 17.2863 23.9871 17.018 23.9877C13.8101 23.994 10.602 23.9714 7.39437 23.9998C5.61627 24.0156 3.90605 22.8213 3.31057 21.0583C3.08786 20.3989 3.08934 19.724 3.08836 19.045C3.08824 18.9587 3.08834 18.8724 3.08834 18.7902C2.84469 18.7623 2.60263 18.7512 2.36752 18.7048C1.10208 18.4553 0.124831 17.3936 0.0398119 16.1015C-0.00720871 15.3868 -0.0325694 14.6516 0.0806584 13.9496C0.312801 12.5103 1.49424 11.5745 2.95465 11.5565C2.98903 11.5561 3.02339 11.5531 3.10669 11.5488C3.10669 11.3279 3.09553 11.1059 3.10856 10.8853C3.17535 9.75455 3.64905 8.81076 4.47231 8.04889C5.28339 7.2983 6.24717 6.91781 7.3628 6.92536C8.68397 6.9343 10.0053 6.9267 11.3265 6.92627C11.3835 6.92625 11.4405 6.92626 11.5079 6.92626C11.5143 6.88001 11.524 6.84229 11.5241 6.80453C11.5253 6.27951 11.5235 5.75447 11.5271 5.22946C11.5278 5.13132 11.5077 5.08266 11.399 5.04921C10.2496 4.6954 9.5208 3.67545 9.54472 2.46821C9.5686 1.2634 10.5929 0.133458 11.7892 0.010513C12.044 -0.0156623 12.3045 0.014516 12.5771 0.0207988ZM13.5795 8.21159C11.595 8.21155 9.6104 8.21083 7.62585 8.21245C7.41299 8.21262 7.19889 8.21421 6.98749 8.23586C5.53308 8.38479 4.36628 9.62603 4.35782 11.0845C4.34106 13.9747 4.33963 16.865 4.35538 19.7551C4.36081 20.7495 4.80779 21.5492 5.61109 22.139C6.15982 22.5418 6.78185 22.709 7.46074 22.708C10.5933 22.7032 13.7259 22.6998 16.8584 22.7068C18.511 22.7104 19.8703 21.3676 19.8825 19.7351C19.9038 16.9027 19.8882 14.07 19.8864 11.2374C19.8861 10.6864 19.7706 10.1589 19.4798 9.688C18.8824 8.72044 18.0112 8.21652 16.8678 8.21117C15.7833 8.2061 14.6987 8.21106 13.5795 8.21159ZM2.15206 17.2862C2.44375 17.4311 2.74566 17.5231 3.08393 17.4755C3.08393 15.9268 3.08393 14.3891 3.08393 12.8512C3.05934 12.8436 3.04361 12.8352 3.02742 12.8342C2.15974 12.7792 1.36677 13.4232 1.28526 14.2929C1.23971 14.779 1.26278 15.2719 1.26385 15.7618C1.2653 16.4279 1.55501 16.934 2.15206 17.2862ZM22.9287 16.0949C22.9365 15.5139 22.987 14.9296 22.9423 14.3527C22.8692 13.412 22.0277 12.7333 21.1491 12.8546C21.1491 14.3939 21.1491 15.9343 21.1491 17.4735C21.9768 17.5633 22.734 16.9821 22.9287 16.0949ZM10.8922 3.03258C11.1768 3.66753 11.7465 3.97528 12.3986 3.84622C12.9908 3.72901 13.4535 3.15536 13.4407 2.55416C13.4275 1.93856 12.9408 1.38591 12.3454 1.28188C11.395 1.11582 10.5281 2.07143 10.8922 3.03258Z",
+  "M15.7505 13.1579C16.9235 13.1009 17.8434 13.8895 18.0948 14.8912C18.405 16.1275 17.5591 17.3887 16.274 17.622C15.0384 17.8464 13.8207 16.9284 13.662 15.6846C13.5144 14.5273 14.3519 13.302 15.7505 13.1579ZM16.8202 14.9444C16.7151 14.8239 16.6245 14.6855 16.5023 14.5862C16.175 14.3205 15.7176 14.3143 15.3395 14.5497C15.0062 14.7572 14.8046 15.1925 14.8732 15.5582C14.9545 15.9913 15.2103 16.274 15.6312 16.3892C16.0472 16.5031 16.4137 16.3848 16.6922 16.0618C16.9729 15.7362 17.0171 15.3621 16.8202 14.9444Z",
+  "M7.35318 13.3881C8.86194 12.6669 10.4721 13.7374 10.5828 15.2324C10.6832 16.5886 9.52058 17.7618 8.19192 17.6554C7.1788 17.5743 6.3645 16.8713 6.12905 15.8744C5.91634 14.9737 6.35091 13.9921 7.19072 13.4776C7.2397 13.4476 7.29154 13.4223 7.35318 13.3881ZM7.33545 15.1317C7.22089 15.5337 7.33602 15.8725 7.63292 16.1503C8.06451 16.5541 8.72954 16.5125 9.13422 16.0649C9.50094 15.6593 9.44291 15.009 9.00603 14.6283C8.45666 14.1496 7.63862 14.3841 7.33545 15.1317Z",
 ];
 const BUTTON_COLOR = "rgb(113, 118, 123)";
+const CONFIRM_COLOR = "rgb(244, 33, 46)";
+const CONFIRMATION_WINDOW_MS = 3000;
+const confirmationTimeouts = new WeakMap();
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -236,6 +242,92 @@ const setButtonState = (button, state, label) => {
   button.setAttribute("aria-label", label);
 };
 
+const clearConfirmationTimeout = (button) => {
+  const timeout = confirmationTimeouts.get(button);
+  if (timeout) clearTimeout(timeout);
+  confirmationTimeouts.delete(button);
+};
+
+const removeCountdownRing = (button) => {
+  button.querySelectorAll(`.${COUNTDOWN_RING_CLASS}`).forEach((ring) => ring.remove());
+};
+
+const resetAiSlopButton = (button) => {
+  clearConfirmationTimeout(button);
+  removeCountdownRing(button);
+  setButtonState(button, "idle", "AI slop");
+};
+
+const addCountdownRing = (button) => {
+  removeCountdownRing(button);
+
+  const ring = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  ring.setAttribute("viewBox", "0 0 44 44");
+  ring.setAttribute("aria-hidden", "true");
+  ring.setAttribute("class", COUNTDOWN_RING_CLASS);
+
+  const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  circle.setAttribute("cx", "22");
+  circle.setAttribute("cy", "22");
+  circle.setAttribute("r", "19");
+  circle.setAttribute("fill", "none");
+  circle.setAttribute("pathLength", "100");
+  ring.appendChild(circle);
+
+  button.appendChild(ring);
+};
+
+const armAiSlopButton = (button, target) => {
+  setButtonState(button, "confirming", `Click again within 3 seconds to report this post as spam and block ${target}`);
+  addCountdownRing(button);
+
+  const timeout = setTimeout(() => {
+    if (button.dataset.state === "confirming") resetAiSlopButton(button);
+  }, CONFIRMATION_WINDOW_MS);
+
+  clearConfirmationTimeout(button);
+  confirmationTimeouts.set(button, timeout);
+};
+
+const revealReportedTweet = (tweet) => {
+  tweet.classList.remove(REPORTED_CLASS);
+  tweet.querySelectorAll(`.${REPORTED_NOTICE_CLASS}`).forEach((notice) => notice.remove());
+};
+
+const createReportedNotice = (tweet) => {
+  const notice = document.createElement("div");
+  notice.className = REPORTED_NOTICE_CLASS;
+
+  const message = document.createElement("div");
+  message.className = `${REPORTED_NOTICE_CLASS}-message`;
+  message.textContent = "You reported this Post.";
+
+  const actions = document.createElement("div");
+  actions.className = `${REPORTED_NOTICE_CLASS}-actions`;
+
+  const viewButton = document.createElement("button");
+  viewButton.type = "button";
+  viewButton.className = REPORTED_VIEW_BUTTON_CLASS;
+  viewButton.textContent = "View";
+  viewButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    revealReportedTweet(tweet);
+  });
+
+  actions.appendChild(viewButton);
+  notice.append(message, actions);
+
+  return notice;
+};
+
+const collapseReportedTweet = (tweet) => {
+  if (!tweet || tweet.classList.contains(REPORTED_CLASS)) return;
+
+  tweet.classList.add(REPORTED_CLASS);
+  tweet.appendChild(createReportedNotice(tweet));
+};
+
 const getDirectChild = (ancestor, descendant) => {
   let child = descendant;
 
@@ -288,7 +380,7 @@ const tintAiSlopButton = (button) => {
 
 const createAiSlopIcon = (className) => {
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  icon.setAttribute("viewBox", "0 0 23 24");
+  icon.setAttribute("viewBox", "0 0 25 24");
   icon.setAttribute("aria-hidden", "true");
   if (className) icon.setAttribute("class", className);
 
@@ -327,8 +419,8 @@ const createFallbackAiSlopControl = () => {
   return wrapper;
 };
 
-const createAiSlopControl = (grokSlot) => {
-  const wrapper = grokSlot ? grokSlot.cloneNode(true) : createFallbackAiSlopControl();
+const createAiSlopControl = (sourceSlot) => {
+  const wrapper = sourceSlot ? sourceSlot.cloneNode(true) : createFallbackAiSlopControl();
   wrapper.classList.add(CONTROL_CLASS);
 
   const button = wrapper.querySelector("button") || wrapper;
@@ -356,37 +448,44 @@ const handleAiSlopClick = async (event) => {
   const target = authorHandle ? `@${authorHandle}` : "this account";
 
   if (button.dataset.state === "loading") return;
-  if (!window.confirm(`Report this post as spam and block ${target}?`)) return;
+  if (button.dataset.state !== "confirming") {
+    armAiSlopButton(button, target);
+    return;
+  }
 
   try {
+    clearConfirmationTimeout(button);
+    removeCountdownRing(button);
     setButtonState(button, "loading", "working");
     const blockedFromReportFlow = await reportTweetAsSpam(tweet);
     await sleep(300);
     if (!blockedFromReportFlow) await blockTweetAuthor(tweet, authorHandle);
     setButtonState(button, "done", "blocked");
+    collapseReportedTweet(tweet);
   } catch (error) {
     console.warn("Minimal Twitter: AI Slop action failed", error);
     setButtonState(button, "error", "failed");
   } finally {
-    setTimeout(() => setButtonState(button, "idle", "ai slop"), 2500);
+    setTimeout(() => resetAiSlopButton(button), 2500);
   }
 };
 
 const addAiSlopButtonToTweet = (tweet) => {
   if (!isEligibleReplyTweet(tweet)) return;
-  if (tweet.querySelector(`.${BUTTON_CLASS}`)) return;
 
   const placement = getTweetActionPlacement(tweet);
   if (!placement) return;
 
   tweet.classList.add(TWEET_CLASS);
 
-  const control = createAiSlopControl(placement.grokSlot);
+  const control = tweet.querySelector(`.${CONTROL_CLASS}`) || createAiSlopControl(placement.grokSlot || placement.caretSlot);
   placement.actionsContainer.insertBefore(control, placement.grokSlot || placement.caretSlot);
 };
 
 const removeAiSlopButtons = () => {
+  document.querySelectorAll(`.${BUTTON_CLASS}`).forEach(clearConfirmationTimeout);
   document.querySelectorAll(`.${CONTROL_CLASS}`).forEach((control) => control.remove());
+  document.querySelectorAll(`.${REPORTED_CLASS}`).forEach(revealReportedTweet);
   document.querySelectorAll(`.${TWEET_CLASS}`).forEach((tweet) => tweet.classList.remove(TWEET_CLASS));
 };
 
@@ -404,11 +503,31 @@ const addAiSlopStyles = () => {
     STYLE_ID,
     `
     .${BUTTON_CLASS} {
+      align-items: center;
+      background: transparent !important;
+      border: 0 !important;
+      box-sizing: border-box;
       color: ${BUTTON_COLOR} !important;
+      cursor: pointer;
+      display: inline-flex;
+      flex: 0 0 auto;
+      height: 100%;
+      justify-content: center;
+      margin: 0;
+      min-height: 0;
+      min-width: 0;
+      padding: 0 !important;
+      position: relative;
+      width: 100%;
     }
 
     .${BUTTON_CLASS} [style] {
       color: ${BUTTON_COLOR} !important;
+    }
+
+    .${BUTTON_CLASS}[data-state="confirming"],
+    .${BUTTON_CLASS}[data-state="confirming"] [style] {
+      color: ${CONFIRM_COLOR} !important;
     }
 
     .${BUTTON_CLASS} svg,
@@ -418,8 +537,28 @@ const addAiSlopStyles = () => {
     }
 
     .${BUTTON_CLASS} svg {
+      display: block;
+      flex: 0 0 auto;
+      height: 18.75px;
+      max-height: 18.75px;
+      max-width: 18.75px;
       transform: scale(0.9);
       transform-origin: center;
+      width: 18.75px;
+    }
+
+    .${CONTROL_CLASS} {
+      align-items: center;
+      box-sizing: border-box;
+      display: inline-flex;
+      flex: 0 0 auto;
+      height: 34px;
+      justify-content: center;
+      margin-left: -6px;
+      margin-right: -6px;
+      min-height: 34px;
+      min-width: 34px;
+      width: 34px;
     }
 
     .${BUTTON_CLASS}:hover,
@@ -430,6 +569,79 @@ const addAiSlopStyles = () => {
     .${BUTTON_CLASS}[data-state="loading"] {
       cursor: wait;
       opacity: 0.75;
+    }
+
+    .${COUNTDOWN_RING_CLASS} {
+      inset: -7px;
+      overflow: visible;
+      pointer-events: none;
+      position: absolute;
+      transform: rotate(-90deg) !important;
+    }
+
+    .${COUNTDOWN_RING_CLASS} circle {
+      animation: mt-ai-slop-countdown ${CONFIRMATION_WINDOW_MS}ms linear forwards;
+      stroke: ${CONFIRM_COLOR};
+      stroke-dasharray: 100;
+      stroke-dashoffset: 0;
+      stroke-linecap: round;
+      stroke-width: 3;
+    }
+
+    @keyframes mt-ai-slop-countdown {
+      to {
+        stroke-dashoffset: 100;
+      }
+    }
+
+    .${REPORTED_CLASS} > :not(.${REPORTED_NOTICE_CLASS}) {
+      display: none !important;
+    }
+
+    .${REPORTED_NOTICE_CLASS} {
+      align-items: center;
+      box-sizing: border-box;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      min-height: 52px;
+      padding: 12px 16px;
+      width: 100%;
+    }
+
+    .${REPORTED_NOTICE_CLASS}-message {
+      color: ${BUTTON_COLOR};
+      font-size: 15px;
+      line-height: 20px;
+      min-width: 0;
+    }
+
+    .${REPORTED_NOTICE_CLASS}-actions {
+      align-items: center;
+      display: flex;
+      flex-shrink: 0;
+    }
+
+    .${REPORTED_VIEW_BUTTON_CLASS} {
+      align-items: center;
+      background: transparent;
+      border: 1px solid rgb(83, 100, 113);
+      border-radius: 9999px;
+      color: rgb(239, 243, 244);
+      cursor: pointer;
+      display: inline-flex;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      justify-content: center;
+      line-height: 20px;
+      min-height: 32px;
+      min-width: 32px;
+      padding: 0 16px;
+    }
+
+    .${REPORTED_VIEW_BUTTON_CLASS}:hover {
+      background: rgba(239, 243, 244, 0.1);
     }
 
     `
