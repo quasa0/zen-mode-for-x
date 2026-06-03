@@ -23,6 +23,7 @@ const CONFIRM_COLOR = "rgb(244, 33, 46)";
 const CONFIRMATION_WINDOW_MS = 3000;
 const confirmationTimeouts = new WeakMap();
 const confirmationStartTimes = new WeakMap();
+const reportedTweetStatusIds = new Set();
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -76,6 +77,11 @@ const getLatestDialog = () => {
   return dialogs[dialogs.length - 1];
 };
 
+const getLatestMenu = () => {
+  const menus = Array.from(document.querySelectorAll(MENU_SELECTOR)).filter(isVisible);
+  return menus[menus.length - 1];
+};
+
 const clickDialogAction = (patterns) => {
   const dialog = getLatestDialog();
   if (!dialog) return false;
@@ -97,6 +103,21 @@ const closeDialogIfPresent = () => {
 
   const closeButton = dialog.querySelector('[aria-label="Close"]');
   if (isVisible(closeButton)) closeButton.click();
+};
+
+const closeMenuIfPresent = () => {
+  if (!getLatestMenu()) return;
+
+  document.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      code: "Escape",
+      key: "Escape",
+      keyCode: 27,
+      which: 27,
+    })
+  );
 };
 
 const isSelectedChoice = (element) =>
@@ -152,23 +173,30 @@ const isEligibleReplyTweet = (tweet) => {
   return Boolean(rootTweet && tweet !== rootTweet);
 };
 
-const clickTweetMenuItem = async (tweet, patterns) => {
+const openTweetMenu = async (tweet) => {
   const caret = tweet.querySelector('[data-testid="caret"]');
   if (!caret) throw new Error("Could not find X post menu button");
 
   caret.click();
 
-  const menu = await waitFor(() => {
-    const menus = Array.from(document.querySelectorAll(MENU_SELECTOR)).filter(isVisible);
-    return menus[menus.length - 1];
-  });
+  return waitFor(getLatestMenu);
+};
 
-  const menuItem = findVisibleByText(patterns, {
+const findTweetMenuItem = (menu, patterns) =>
+  findVisibleByText(patterns, {
     root: menu,
     selector: '[role="menuitem"], [role="menuitemradio"], [role="button"]',
   });
 
-  if (!menuItem) throw new Error("Could not find X post menu action");
+const clickTweetMenuItem = async (tweet, patterns) => {
+  const menu = await openTweetMenu(tweet);
+
+  const menuItem = findTweetMenuItem(menu, patterns);
+
+  if (!menuItem) {
+    closeMenuIfPresent();
+    throw new Error("Could not find X post menu action");
+  }
 
   menuItem.click();
 };
@@ -223,14 +251,38 @@ const completeSpamReport = async () => {
 };
 
 const reportTweetAsSpam = async (tweet) => {
-  await clickTweetMenuItem(tweet, [/^report post$/i, /^report tweet$/i, /^report$/i]);
+  const menu = await openTweetMenu(tweet);
+  const reportItem = findTweetMenuItem(menu, [/^report post$/i, /^report tweet$/i, /^report$/i]);
+
+  if (!reportItem) {
+    closeMenuIfPresent();
+    return false;
+  }
+
+  reportItem.click();
   return completeSpamReport();
 };
 
 const blockTweetAuthor = async (tweet, authorHandle) => {
   const blockPatterns = authorHandle ? [new RegExp(`^block\\s+@?${escapeRegExp(authorHandle)}$`, "i"), /^block\b/i] : [/^block\b/i];
+  const unblockPatterns = authorHandle ? [new RegExp(`^unblock\\s+@?${escapeRegExp(authorHandle)}$`, "i"), /^unblock\b/i] : [/^unblock\b/i];
 
-  await clickTweetMenuItem(tweet, blockPatterns);
+  const menu = await openTweetMenu(tweet);
+  const unblockItem = findTweetMenuItem(menu, unblockPatterns);
+
+  if (unblockItem) {
+    closeMenuIfPresent();
+    return;
+  }
+
+  const blockItem = findTweetMenuItem(menu, blockPatterns);
+
+  if (!blockItem) {
+    closeMenuIfPresent();
+    throw new Error("Could not find X block menu action");
+  }
+
+  blockItem.click();
   await waitFor(getLatestDialog, 5000);
 
   if (!clickDialogAction([/^block$/i])) {
@@ -305,8 +357,17 @@ const syncCountdownRing = (button) => {
 };
 
 const revealReportedTweet = (tweet) => {
+  const statusId = getTweetStatusId(tweet);
+  if (statusId) reportedTweetStatusIds.delete(statusId);
+
   tweet.classList.remove(REPORTED_CLASS);
   tweet.querySelectorAll(`.${REPORTED_NOTICE_CLASS}`).forEach((notice) => notice.remove());
+  Array.from(tweet.children).forEach((child) => {
+    if (child.dataset.aiSlopReportedHidden !== "true") return;
+
+    child.style.removeProperty("display");
+    delete child.dataset.aiSlopReportedHidden;
+  });
 };
 
 const createReportedNotice = (tweet) => {
@@ -337,10 +398,24 @@ const createReportedNotice = (tweet) => {
 };
 
 const collapseReportedTweet = (tweet) => {
-  if (!tweet || tweet.classList.contains(REPORTED_CLASS)) return;
+  if (!tweet) return;
+
+  const statusId = getTweetStatusId(tweet);
+  if (statusId) reportedTweetStatusIds.add(statusId);
+
+  let notice = tweet.querySelector(`:scope > .${REPORTED_NOTICE_CLASS}`);
+  if (!notice) {
+    notice = createReportedNotice(tweet);
+    tweet.appendChild(notice);
+  }
 
   tweet.classList.add(REPORTED_CLASS);
-  tweet.appendChild(createReportedNotice(tweet));
+  Array.from(tweet.children).forEach((child) => {
+    if (child === notice) return;
+
+    child.style.setProperty("display", "none", "important");
+    child.dataset.aiSlopReportedHidden = "true";
+  });
 };
 
 const getDirectChild = (ancestor, descendant) => {
@@ -489,6 +564,13 @@ const handleAiSlopClick = async (event) => {
 };
 
 const addAiSlopButtonToTweet = (tweet) => {
+  const statusId = getTweetStatusId(tweet);
+
+  if (tweet.querySelector(`:scope > .${REPORTED_NOTICE_CLASS}`) || (statusId && reportedTweetStatusIds.has(statusId))) {
+    collapseReportedTweet(tweet);
+    return;
+  }
+
   if (!isEligibleReplyTweet(tweet)) return;
 
   const placement = getTweetActionPlacement(tweet);
@@ -509,7 +591,12 @@ const addAiSlopButtonToTweet = (tweet) => {
 const removeAiSlopButtons = () => {
   document.querySelectorAll(`.${BUTTON_CLASS}`).forEach(clearConfirmationTimeout);
   document.querySelectorAll(`.${CONTROL_CLASS}`).forEach((control) => control.remove());
-  document.querySelectorAll(`.${REPORTED_CLASS}`).forEach(revealReportedTweet);
+  reportedTweetStatusIds.clear();
+  document.querySelectorAll(selectors.tweet).forEach((tweet) => {
+    const hasReportedNotice = Boolean(tweet.querySelector(`:scope > .${REPORTED_NOTICE_CLASS}`));
+    const hasHiddenReportedChild = Array.from(tweet.children).some((child) => child.dataset.aiSlopReportedHidden === "true");
+    if (tweet.classList.contains(REPORTED_CLASS) || hasReportedNotice || hasHiddenReportedChild) revealReportedTweet(tweet);
+  });
   document.querySelectorAll(`.${TWEET_CLASS}`).forEach((tweet) => tweet.classList.remove(TWEET_CLASS));
 };
 
@@ -643,12 +730,17 @@ const addAiSlopStyles = () => {
 
     .${REPORTED_NOTICE_CLASS} {
       align-items: center;
+      background-color: rgb(22, 24, 28);
+      border: 1px solid rgb(32, 35, 39);
+      border-radius: 16px;
       box-sizing: border-box;
       display: flex;
+      font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
       gap: 12px;
       justify-content: space-between;
-      min-height: 52px;
-      padding: 12px 16px;
+      margin: 12px 0;
+      min-height: 0;
+      padding: 6px 4px;
       width: 100%;
     }
 
@@ -656,6 +748,7 @@ const addAiSlopStyles = () => {
       color: ${BUTTON_COLOR};
       font-size: 15px;
       line-height: 20px;
+      margin: 0 12px;
       min-width: 0;
     }
 
@@ -668,19 +761,19 @@ const addAiSlopStyles = () => {
     .${REPORTED_VIEW_BUTTON_CLASS} {
       align-items: center;
       background: transparent;
-      border: 1px solid rgb(83, 100, 113);
+      border: 1px solid rgba(0, 0, 0, 0);
       border-radius: 9999px;
       color: rgb(239, 243, 244);
       cursor: pointer;
       display: inline-flex;
-      font: inherit;
+      font-family: inherit;
       font-size: 15px;
       font-weight: 700;
       justify-content: center;
       line-height: 20px;
       min-height: 32px;
       min-width: 32px;
-      padding: 0 16px;
+      padding: 0 12px;
     }
 
     .${REPORTED_VIEW_BUTTON_CLASS}:hover {
