@@ -4,6 +4,7 @@ import addStyles, { removeStyles } from "../utilities/addStyles";
 const BUTTON_CLASS = "mt-ai-slop-button";
 const CONTROL_CLASS = "mt-ai-slop-control";
 const TWEET_CLASS = "mt-ai-slop-tweet";
+const ICON_WRAP_CLASS = "mt-ai-slop-icon-wrap";
 const COUNTDOWN_RING_CLASS = "mt-ai-slop-countdown-ring";
 const REPORTED_CLASS = "mt-ai-slop-reported";
 const REPORTED_NOTICE_CLASS = "mt-ai-slop-reported-notice";
@@ -21,6 +22,7 @@ const BUTTON_COLOR = "rgb(113, 118, 123)";
 const CONFIRM_COLOR = "rgb(244, 33, 46)";
 const CONFIRMATION_WINDOW_MS = 3000;
 const confirmationTimeouts = new WeakMap();
+const confirmationStartTimes = new WeakMap();
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -246,6 +248,7 @@ const clearConfirmationTimeout = (button) => {
   const timeout = confirmationTimeouts.get(button);
   if (timeout) clearTimeout(timeout);
   confirmationTimeouts.delete(button);
+  confirmationStartTimes.delete(button);
 };
 
 const removeCountdownRing = (button) => {
@@ -261,6 +264,7 @@ const resetAiSlopButton = (button) => {
 const addCountdownRing = (button) => {
   removeCountdownRing(button);
 
+  const iconWrap = button.querySelector(`.${ICON_WRAP_CLASS}`) || button;
   const ring = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   ring.setAttribute("viewBox", "0 0 44 44");
   ring.setAttribute("aria-hidden", "true");
@@ -269,15 +273,18 @@ const addCountdownRing = (button) => {
   const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
   circle.setAttribute("cx", "22");
   circle.setAttribute("cy", "22");
-  circle.setAttribute("r", "19");
+  circle.setAttribute("r", "21");
   circle.setAttribute("fill", "none");
   circle.setAttribute("pathLength", "100");
   ring.appendChild(circle);
 
-  button.appendChild(ring);
+  iconWrap.appendChild(ring);
+  syncCountdownRing(button);
 };
 
 const armAiSlopButton = (button, target) => {
+  clearConfirmationTimeout(button);
+  confirmationStartTimes.set(button, Date.now());
   setButtonState(button, "confirming", `Click again within 3 seconds to report this post as spam and block ${target}`);
   addCountdownRing(button);
 
@@ -285,8 +292,16 @@ const armAiSlopButton = (button, target) => {
     if (button.dataset.state === "confirming") resetAiSlopButton(button);
   }, CONFIRMATION_WINDOW_MS);
 
-  clearConfirmationTimeout(button);
   confirmationTimeouts.set(button, timeout);
+};
+
+const syncCountdownRing = (button) => {
+  const ring = button.querySelector(`.${COUNTDOWN_RING_CLASS}`);
+  if (!ring) return;
+
+  const elapsed = Math.min(Date.now() - (confirmationStartTimes.get(button) || Date.now()), CONFIRMATION_WINDOW_MS);
+  ring.style.animationDuration = `${CONFIRMATION_WINDOW_MS}ms`;
+  ring.style.animationDelay = `-${elapsed}ms`;
 };
 
 const revealReportedTweet = (tweet) => {
@@ -397,11 +412,14 @@ const createAiSlopIcon = (className) => {
 const replaceButtonIcon = (button) => {
   const existingIcon = button.querySelector("svg");
   const icon = createAiSlopIcon(existingIcon?.getAttribute("class"));
+  const wrapper = document.createElement("span");
+  wrapper.className = ICON_WRAP_CLASS;
+  wrapper.appendChild(icon);
 
   if (existingIcon) {
-    existingIcon.replaceWith(icon);
+    existingIcon.replaceWith(wrapper);
   } else {
-    button.appendChild(icon);
+    button.appendChild(wrapper);
   }
 };
 
@@ -479,7 +497,13 @@ const addAiSlopButtonToTweet = (tweet) => {
   tweet.classList.add(TWEET_CLASS);
 
   const control = tweet.querySelector(`.${CONTROL_CLASS}`) || createAiSlopControl(placement.grokSlot || placement.caretSlot);
-  placement.actionsContainer.insertBefore(control, placement.grokSlot || placement.caretSlot);
+  const reference = placement.grokSlot || placement.caretSlot;
+  const button = control.querySelector(`.${BUTTON_CLASS}`);
+  if (button?.dataset.state === "confirming") syncCountdownRing(button);
+
+  if (control.parentElement !== placement.actionsContainer || control.nextSibling !== reference) {
+    placement.actionsContainer.insertBefore(control, reference);
+  }
 };
 
 const removeAiSlopButtons = () => {
@@ -547,18 +571,34 @@ const addAiSlopStyles = () => {
       width: 18.75px;
     }
 
+    .${ICON_WRAP_CLASS} {
+      align-items: center;
+      display: inline-flex;
+      height: 18.75px;
+      justify-content: center;
+      line-height: 0;
+      position: relative;
+      width: 18.75px;
+    }
+
+    .${ICON_WRAP_CLASS} > svg:not(.${COUNTDOWN_RING_CLASS}) {
+      height: 18.75px;
+      max-height: 18.75px;
+      max-width: 18.75px;
+      width: 18.75px;
+    }
+
     .${CONTROL_CLASS} {
       align-items: center;
       box-sizing: border-box;
       display: inline-flex;
       flex: 0 0 auto;
-      height: 34px;
+      height: auto;
       justify-content: center;
-      margin-left: -6px;
-      margin-right: -6px;
-      min-height: 34px;
-      min-width: 34px;
-      width: 34px;
+      margin: 0 !important;
+      min-height: 0;
+      min-width: 0;
+      width: auto;
     }
 
     .${BUTTON_CLASS}:hover,
@@ -572,11 +612,14 @@ const addAiSlopStyles = () => {
     }
 
     .${COUNTDOWN_RING_CLASS} {
-      inset: -7px;
+      height: 20.625px !important;
+      left: 50%;
       overflow: visible;
       pointer-events: none;
       position: absolute;
-      transform: rotate(-90deg) !important;
+      top: 50%;
+      transform: translate(-50%, -50%) rotate(-90deg) !important;
+      width: 20.625px !important;
     }
 
     .${COUNTDOWN_RING_CLASS} circle {
@@ -585,7 +628,7 @@ const addAiSlopStyles = () => {
       stroke-dasharray: 100;
       stroke-dashoffset: 0;
       stroke-linecap: round;
-      stroke-width: 3;
+      stroke-width: 2;
     }
 
     @keyframes mt-ai-slop-countdown {
