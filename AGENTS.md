@@ -8,6 +8,11 @@ Open-source browser extension for Chrome, Firefox, and Safari that customizes th
 
 Repository: https://github.com/typefully/minimal-twitter
 
+## Git Workflow
+
+- Work directly on `main`; do not create feature branches for routine agent work in this repository.
+- Push completed work to `origin/main` unless the user explicitly asks for a different branch.
+
 ## Build and Development Commands
 
 ### Building the Extension
