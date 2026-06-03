@@ -74,7 +74,7 @@ const TimelineSection = () => {
           />
           <LocalStorageCheckboxControl
             label="AI Slop Button"
-            description='Adds a tiny "ai slop" action to posts. Clicking it asks X to report the post as spam and then block the author.'
+            description='Adds a tiny "ai slop" action to replies. Clicking it asks X to report the reply as spam and then block the author.'
             storageKey={KeyAiSlopButton}
           />
           <LocalStorageCheckboxControl

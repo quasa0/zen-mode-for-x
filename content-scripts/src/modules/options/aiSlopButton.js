@@ -113,6 +113,37 @@ const getTweetAuthorHandle = (tweet) => {
   }
 };
 
+const getStatusIdFromPathname = (pathname) => pathname.match(/^\/[^/]+\/status\/(\d+)/)?.[1] || null;
+
+const getCurrentStatusId = () => getStatusIdFromPathname(window.location.pathname);
+
+const getTweetStatusId = (tweet) => {
+  const statusLink = Array.from(tweet.querySelectorAll('a[href*="/status/"]')).find((link) => {
+    try {
+      return getStatusIdFromPathname(new URL(link.href).pathname);
+    } catch {
+      return false;
+    }
+  });
+
+  if (!statusLink) return null;
+
+  try {
+    return getStatusIdFromPathname(new URL(statusLink.href).pathname);
+  } catch {
+    return null;
+  }
+};
+
+const getVisibleStatusTweets = () => Array.from(document.querySelectorAll(selectors.tweet)).filter((tweet) => isVisible(tweet) && getTweetStatusId(tweet));
+
+const isEligibleReplyTweet = (tweet) => {
+  if (!getCurrentStatusId() || !getTweetStatusId(tweet)) return false;
+
+  const rootTweet = getVisibleStatusTweets()[0];
+  return Boolean(rootTweet && tweet !== rootTweet);
+};
+
 const clickTweetMenuItem = async (tweet, patterns) => {
   const caret = tweet.querySelector('[data-testid="caret"]');
   if (!caret) throw new Error("Could not find X post menu button");
@@ -342,6 +373,7 @@ const handleAiSlopClick = async (event) => {
 };
 
 const addAiSlopButtonToTweet = (tweet) => {
+  if (!isEligibleReplyTweet(tweet)) return;
   if (tweet.querySelector(`.${BUTTON_CLASS}`)) return;
 
   const placement = getTweetActionPlacement(tweet);
@@ -356,6 +388,15 @@ const addAiSlopButtonToTweet = (tweet) => {
 const removeAiSlopButtons = () => {
   document.querySelectorAll(`.${CONTROL_CLASS}`).forEach((control) => control.remove());
   document.querySelectorAll(`.${TWEET_CLASS}`).forEach((tweet) => tweet.classList.remove(TWEET_CLASS));
+};
+
+const removeIneligibleAiSlopButtons = () => {
+  document.querySelectorAll(`.${TWEET_CLASS}`).forEach((tweet) => {
+    if (isEligibleReplyTweet(tweet)) return;
+
+    tweet.querySelectorAll(`.${CONTROL_CLASS}`).forEach((control) => control.remove());
+    tweet.classList.remove(TWEET_CLASS);
+  });
 };
 
 const addAiSlopStyles = () => {
@@ -404,6 +445,7 @@ export const changeAiSlopButton = (aiSlopButton) => {
 
     case "on":
       addAiSlopStyles();
+      removeIneligibleAiSlopButtons();
       document.querySelectorAll(selectors.tweet).forEach(addAiSlopButtonToTweet);
       break;
   }
