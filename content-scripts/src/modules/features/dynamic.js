@@ -47,16 +47,22 @@ import {
   enableGrokDrawerOnGrokButtonClick,
 } from "../options/timeline";
 import { changeVideoResolutionOverlay } from "../options/videoResolutionOverlay";
+import { refreshPostFilters } from "../options/postFilters";
+import { refreshMindfulScrolling } from "../options/mindfulScrolling";
 import { changeWriterMode } from "../options/writerMode";
 import { addTypefullyComposerPlug, addTypefullyReplyPlug, saveCurrentReplyToLink, addTypefullySecurityAndAccountAccessPlug, addTypefullySchedulePlug } from "../typefullyPlugs";
 import hideRightSidebar from "../utilities/hideRightSidebar";
 import { updateLeftSidebarPositioning } from "../utilities/leftSidebarPosition";
 import { addSmallerSearchBarStyle } from "../utilities/other-styles";
 import { getStorage } from "../utilities/storage";
+import { extractColorsAsRootVars } from "../utilities/colors";
 import throttle from "../utilities/throttle";
 
 export const dynamicFeatures = {
   general: async () => {
+    extractColorsAsRootVars();
+    refreshPostFilters();
+    refreshMindfulScrolling();
     const data = await getStorage([KeyHideViewCount, KeyHideGrokDrawer, KeyAiSlopButton, KeyVideoResolutionOverlay]);
 
     changeHideViewCounts(data[KeyHideViewCount]);
@@ -91,9 +97,8 @@ export const dynamicFeatures = {
     if (data[KeyZenWriterModeButton] === "on") addZenWriterModeButton(writerMode);
   },
   writerMode: async (data) => {
-    if (data[KeyWriterMode] === "on") {
-      changeWriterMode(data[KeyWriterMode]);
-    } else {
+    changeWriterMode(data[KeyWriterMode]);
+    if (data[KeyWriterMode] !== "on") {
       changeTimelineTabs(data[KeyRemoveTimelineTabs], data[KeyWriterMode]);
       changeTopicsToFollow(data[KeyRemoveTopicsToFollow]);
       changeTrendsHomeTimeline(data[KeyTrendsHomeTimeline], data[KeyWriterMode]);
@@ -102,7 +107,8 @@ export const dynamicFeatures = {
   },
 };
 
-export const runDynamicFeatures = throttle(async () => {
+const applyDynamicFeatures = async () => {
+  await dynamicFeatures.general();
   const data = await getStorage([
     KeyWriterMode,
     KeyFollowingTimeline,
@@ -114,7 +120,6 @@ export const runDynamicFeatures = throttle(async () => {
   ]);
 
   if (data) {
-    dynamicFeatures.general();
     dynamicFeatures.typefullyPlugs();
     await dynamicFeatures.sidebarButtons(data[KeyWriterMode]);
     await dynamicFeatures.writerMode(data);
@@ -123,5 +128,23 @@ export const runDynamicFeatures = throttle(async () => {
     // The Grok drawer appears dynamically, so we need to handle it here as well
     // as in the static features module
     hideGrokDrawer(data?.[KeyHideGrokDrawer]);
+  }
+};
+
+let applying = false;
+let requested = false;
+export const runDynamicFeatures = throttle(async () => {
+  requested = true;
+  if (applying) return;
+  applying = true;
+  try {
+    while (requested) {
+      requested = false;
+      await applyDynamicFeatures();
+    }
+  } catch (error) {
+    console.error("Zen for X dynamic update failed", error);
+  } finally {
+    applying = false;
   }
 }, 50);

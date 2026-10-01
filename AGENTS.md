@@ -20,10 +20,14 @@ Repository: https://github.com/typefully/minimal-twitter
 Requires [classic yarn](https://classic.yarnpkg.com/lang/en/docs/install/).
 
 - `yarn build` or `yarn bundle` - Builds and bundles the extension for all browsers (prompts for browser choice)
+- `yarn package:extension` - Noninteractive Chrome/Firefox packaging with installed dependencies. No installs. Validates manifest resources and ZIP integrity before publishing local artifacts.
+- `yarn test:extension:package` - Smoke-tests the actual Chrome package in disposable Helium. Add `--browser chrome` for Chrome. Run after packaging.
 - `yarn test:extension` - Builds and tests the real extension in a disposable headless Helium profile. Add `--browser chrome` for Chrome.
 - `yarn test:extension:profile` - Checks cookie persistence across normal quit and automated restart in a disposable profile. Opens a temporary normal window; do not run while the user is entering credentials.
 - `yarn dev:extension --headless --fixture` - Watches sources and verifies automated build, extension reload, and host-page refresh against the fixture.
 - `yarn inspect:extension --url https://x.com/home` - Captures fresh disabled/enabled pages and writes `comparison.html`. Holds the first Home feed response constant after a successful real request; later pagination stays live. Requires one-time sign-in with `yarn login:extension`.
+- `yarn audit:extension --headless` - Scrolls authenticated Home and public profiles, compares stable native nodes with filters off/on, checks responsive layout, and restores preferences. No follow, post, like or report actions. Use `--steps 12..120` for the Home scroll count.
+  - Targeted live audits: `--suite focus`, `--suite media`, or `--suite labels --url https://x.com/HANDLE/status/ID`.
 - `yarn login:extension` - Opens the dedicated profile in a normal headed browser with extensions disabled and no CDP connection. Quit this browser or press Ctrl+C before starting a development or inspection session. Fixture tests use disposable profiles.
 - Builds both popup (Next.js) and content-scripts (Rollup) automatically
 - Creates bundled packages in `/bundle/` directory for Chrome, Firefox, and Safari
@@ -83,7 +87,7 @@ Always refresh the loaded extension and its X page after extension changes. The 
 
 **Initialization** (content-scripts/src/modules/initialize.js):
 
-1. Loads stylesheets (local + CDN in production)
+1. Loads bundled stylesheets
 2. Applies static features once
 3. Runs dynamic features
 4. Sets up MutationObserver for DOM changes
@@ -149,8 +153,7 @@ To add a new feature toggle:
 ## CSS and Styling
 
 - Main styles: `/css/main.css` and `/css/typefully.css`
-- In production, extension loads cached versions from GitHub CDN
-- In development mode, only loads local CSS files
+- Development and release builds load only bundled CSS. Do not fetch upstream runtime styles that can override the tested fork.
 - Content scripts inject styles dynamically via `addStyleSheet()` and `addStyles()` utilities
 
 ## Browser Compatibility

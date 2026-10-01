@@ -11,8 +11,10 @@ const fallbackXFavicon =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='black'/%3E%3Cpath fill='white' d='M18.7 14.1 28.1 3h-2.2l-8.1 9.6L11.3 3H3.8l9.9 14.4L3.8 29h2.2l8.7-10.2 6.9 10.2h7.5L18.7 14.1Zm-3.1 3.6-1-1.4L6.7 4.7h3.2l6.4 9.4 1 1.4 8.3 12.1h-3.2l-6.8-9.9Z'/%3E%3C/svg%3E";
 let titleNotificationsObserver;
 let titleNotificationsSetting;
-let titleNotificationsTimeout;
 let cleanFaviconHref;
+let nativeTitle;
+let appliedTitle;
+const modifiedFavicons = new Map();
 
 const getFavicons = () => document.querySelectorAll('link[rel~="icon"]');
 
@@ -31,9 +33,11 @@ const rememberCleanFavicon = () => {
 };
 
 const stripTitleNotificationCount = () => {
+  if (document.title !== appliedTitle) nativeTitle = document.title;
   const title = document.title.replace(titleNotificationRegex, "");
 
   if (title !== document.title) {
+    appliedTitle = title;
     document.title = title;
   }
 };
@@ -41,35 +45,55 @@ const stripTitleNotificationCount = () => {
 const updateFaviconNotificationState = (enabled) => {
   rememberCleanFavicon();
 
-  if (enabled) return;
+  if (enabled) {
+    modifiedFavicons.forEach(({ nativeHref, appliedHref }, favicon) => {
+      if (favicon.getAttribute("href") === appliedHref) favicon.setAttribute("href", nativeHref);
+    });
+    modifiedFavicons.clear();
+    return;
+  }
 
   getFavicons().forEach((favicon) => {
     const href = favicon.getAttribute("href");
     if (!href || !isNotificationFavicon(href)) return;
 
-    favicon.setAttribute("href", cleanFaviconHref || fallbackXFavicon);
+    const appliedHref = cleanFaviconHref || fallbackXFavicon;
+    modifiedFavicons.set(favicon, { nativeHref: href, appliedHref });
+    favicon.setAttribute("href", appliedHref);
+  });
+  modifiedFavicons.forEach((_state, favicon) => {
+    if (!favicon.isConnected) modifiedFavicons.delete(favicon);
   });
 };
 
 const applyTitleNotificationsPreference = () => {
   if (titleNotificationsSetting === "on") {
+    if (appliedTitle !== undefined && document.title === appliedTitle && nativeTitle !== undefined) document.title = nativeTitle;
+    appliedTitle = undefined;
+    nativeTitle = undefined;
     updateFaviconNotificationState(true);
     return;
   }
 
   stripTitleNotificationCount();
   updateFaviconNotificationState(false);
-
-  clearTimeout(titleNotificationsTimeout);
-  titleNotificationsTimeout = setTimeout(() => {
-    updateFaviconNotificationState(false);
-  });
+  titleNotificationsObserver?.takeRecords();
 };
 
 const observeTitleNotifications = () => {
   if (titleNotificationsObserver) return;
 
-  titleNotificationsObserver = new MutationObserver(() => {
+  titleNotificationsObserver = new MutationObserver((mutations) => {
+    const titleElement = document.querySelector("title");
+    if (mutations.some((mutation) => mutation.target === titleElement || titleElement?.contains(mutation.target)) && document.title === appliedTitle) {
+      nativeTitle = document.title;
+      appliedTitle = undefined;
+    }
+    mutations.forEach((mutation) => {
+      if (mutation.type !== "attributes" || mutation.attributeName !== "href") return;
+      const previous = modifiedFavicons.get(mutation.target);
+      if (previous && mutation.target.getAttribute("href") === previous.appliedHref) modifiedFavicons.delete(mutation.target);
+    });
     applyTitleNotificationsPreference();
   });
 
@@ -84,8 +108,12 @@ const observeTitleNotifications = () => {
 
 export const changeTitleNotifications = async (tf) => {
   titleNotificationsSetting = tf ?? (await getStorage(KeyTitleNotifications));
+  if (titleNotificationsSetting === "on") {
+    titleNotificationsObserver?.disconnect();
+    titleNotificationsObserver = undefined;
+  }
   applyTitleNotificationsPreference();
-  observeTitleNotifications();
+  if (titleNotificationsSetting === "off") observeTitleNotifications();
 };
 
 // Function to change to Inter Font
@@ -158,17 +186,7 @@ export const changeHideSearchBar = (searchBar) => {
 
     case "on":
       removeStyles("searchBar");
-      addStyles(
-        "trendsHomeTimeline-more",
-        `@media only screen and (min-width: 1265px) {
-          ${selectors.rightSidebar} section[aria-labelledby^="accessible-list-"] {
-            top: unset;
-          }
-          .mt-recentMedia-photoGrid {
-            top: unset !important;
-          }
-        }`,
-      );
+      removeStyles("trendsHomeTimeline-more");
       break;
   }
 };

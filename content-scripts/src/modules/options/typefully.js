@@ -1,9 +1,11 @@
 import addStyles, { removeStyles } from "../utilities/addStyles";
+import { setTypefullyEnhancementsEnabled } from "../typefullyPlugs";
 
 // Function to change Typefully Composer Buttons
 export const changeTypefullyEnhancementsButtons = (typefullyEnhancementsButtons) => {
   switch (typefullyEnhancementsButtons) {
     case "off":
+      setTypefullyEnhancementsEnabled(false);
       addStyles(
         "typefullyEnhancementsButtons",
         `
@@ -23,6 +25,7 @@ export const changeTypefullyEnhancementsButtons = (typefullyEnhancementsButtons)
       break;
 
     case "on":
+      setTypefullyEnhancementsEnabled(true);
       removeStyles("typefullyEnhancementsButtons");
       break;
   }

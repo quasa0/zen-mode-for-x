@@ -4,6 +4,8 @@ import {
   KeyHideViewCount,
   KeyRecentMedia,
   KeyRemovePromotedPosts,
+  KeyRemovePaidPartnershipPosts,
+  KeyRemoveAiPosts,
   KeyRemoveTimelineBorders,
   KeyRemoveTimelineTabs,
   KeyRemoveTopicsToFollow,
@@ -15,6 +17,7 @@ import {
 } from "../../../storage-keys";
 import useMounted from "../../utilities/hooks/useMounted";
 import TimelineWidthSlider from "../controls/TimelineWidthSlider";
+import ScrollLimits from "../controls/ScrollLimits";
 import VanityCheckboxes from "../controls/VanityCheckboxes";
 import ControlsWrapper from "../ui/ControlsWrapper";
 import SectionLabel from "../ui/SectionLabel";
@@ -31,6 +34,7 @@ const TimelineSection = () => {
       {mounted ? (
         <ControlsWrapper id="user-control-timeline">
           <TimelineWidthSlider />
+          <ScrollLimits />
           <Separator />
           <SwitchControl
             label="Zen Writer Mode"
@@ -49,7 +53,7 @@ const TimelineSection = () => {
           />
           <SwitchControl
             label="Recent Media on Profiles"
-            description="Adds a compact recent-media panel next to profile timelines on desktop, making a profile's images easier to scan without opening the Media tab."
+            description="Shows profile photos from loaded posts in a compact panel on wide screens."
             storageKey={KeyRecentMedia}
           />
           <SwitchControl
@@ -76,6 +80,18 @@ const TimelineSection = () => {
             label="Topics to Follow Suggestions"
             description="Hides recommendation modules that ask you to follow topics or accounts while browsing timelines and profile pages."
             storageKey={KeyRemoveTopicsToFollow}
+            crossedIcon
+          />
+          <LocalStorageCheckboxControl
+            label="Paid Partnership Posts"
+            description="Hides posts that carry X's Paid Partnership disclosure. This is separate from native X ads."
+            storageKey={KeyRemovePaidPartnershipPosts}
+            crossedIcon
+          />
+          <LocalStorageCheckboxControl
+            label="Made with AI Posts"
+            description="Hides posts with X's Made with AI disclosure. It uses the platform label rather than guessing from the post's text."
+            storageKey={KeyRemoveAiPosts}
             crossedIcon
           />
           <LocalStorageCheckboxControl

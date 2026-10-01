@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Anonymous navigation audit fixture</title>
+  <style>
+    body { margin: 0; font: 16px system-ui; color: #111; background: #fff; }
+    header { position: relative; width: 260px; }
+    #navigation-stack { display: flex; flex-direction: column; justify-content: flex-start; padding-top: 12px; min-height: 900px; }
+    #primary-navigation { display: flex; flex-direction: column; }
+    #primary-navigation > a, #primary-navigation > button { display: flex; color: inherit; text-decoration: none; flex-shrink: 0; }
+    .nav-row { display: flex; align-items: center; gap: 16px; padding: 8px 12px; min-height: 28px; border-radius: 24px; }
+    .nav-icon { position: relative; }
+    svg { display: block; width: 28px; height: 28px; fill: currentColor; }
+    .nav-label { display: flex; font-weight: 700; }
+    .badge { position: absolute; top: 0; right: 0; width: 12px; height: 12px; background: #07f; }
+    #account-menu { display: flex; width: 240px; border: 0; background: none; padding: 12px; }
+    #account-menu > div { padding: 4px; }
+    #account-menu svg { display: inline-block; }
+    main { position: absolute; top: 0; left: 300px; display: flex; flex-direction: column; width: 800px; }
+    #fixture-composer { padding: 16px; border-bottom: 1px solid #ddd; }
+    #fixture-editor { min-height: 80px; padding: 12px 0; outline-offset: 4px; }
+    #fixture-composer [data-testid="toolBar"] { display: flex; align-items: center; gap: 8px; }
+    #fixture-composer [data-testid="tweetButtonInline"] { margin-left: auto; }
+    #fixture-mutations { min-height: 1px; }
+    [data-testid="GrokDrawer"] { width: 120px; height: 30px; }
+    #outside-navigation { position: absolute; top: 0; right: 0; }
+  </style>
+</head>
+<body>
+  <nav id="outside-navigation" role="navigation" aria-label="Unrelated navigation">
+    <a id="outside-profile" role="link" data-testid="AppTabBar_Profile_Link" href="/unrelated">Outside Profile</a>
+    <a id="outside-lists" role="link" aria-label="Lists" href="/unrelated/lists">Outside Lists</a>
+    <button id="outside-analytics" aria-label="Analytics">Outside Analytics</button>
+    <a id="outside-articles" href="/compose/articles">Outside Articles</a>
+  </nav>
+  <header role="banner">
+    <div><div><div id="navigation-stack">
+      <div><h1 id="nav-logo" role="heading"><a role="link" href="/home" aria-label="X">X</a></h1></div>
+      <nav id="primary-navigation" role="navigation" aria-label="Primary"></nav>
+      <button id="account-menu" data-testid="SideNav_AccountSwitcher_Button" aria-label="Account menu">
+        <div>Avatar</div><div id="account-label">Fixture Account</div><div><svg viewBox="0 0 24 24"><path d="M2 2h20v20H2z"></path></svg><div id="account-badge" class="badge" aria-label="1 unread notification"></div></div>
+      </button>
+    </div></div></div>
+  </header>
+  <main role="main">
+    <div data-testid="primaryColumn"><div>
+      <div>Fixture Home</div>
+      <div id="fixture-composer">
+        <div>
+          <div id="fixture-editor" data-testid="tweetTextarea_0" role="textbox" contenteditable="true" aria-label="Post text" aria-multiline="true" spellcheck="true"><div><br></div></div>
+        </div>
+        <div data-testid="toolBar">
+          <div><button type="button" aria-label="Add photos or video" data-testid="fileInputButton">Media</button></div>
+          <div><button type="button" aria-label="Add emoji">Emoji</button></div>
+          <button type="button" data-testid="tweetButtonInline" aria-disabled="true" disabled>Post</button>
+        </div>
+      </div>
+      <div id="fixture-mutations"></div>
+    </div></div>
+    <div id="grok-drawer" data-testid="GrokDrawer">Grok drawer</div>
+    <div id="grok-drawer-enabled" data-testid="GrokDrawer" class="typefully-grok-drawer-enabled">Explicitly opened drawer</div>
+  </main>
+  <script>
+    const navigation = document.getElementById('primary-navigation');
+    const controls = [
+      ['home', 'Home', '/home', 'AppTabBar_Home_Link'],
+      ['explore', 'Search and explore', '/explore', 'AppTabBar_Explore_Link'],
+      ['notifications', 'Notifications', '/notifications', 'AppTabBar_Notifications_Link'],
+      ['messages', 'Direct Messages', '/i/chat', 'AppTabBar_DirectMessage_Link'],
+      ['grok', 'Grok', '/i/grok'],
+      ['premium', 'Premium', '/i/premium_sign_up', 'premium-signup-tab'],
+      ['bookmarks', 'Bookmarks', '/i/bookmarks'],
+      ['jobs', 'Jobs', '/jobs'],
+      ['articles', 'Articles', '/compose/articles'],
+      ['verified-orgs', 'Verified Orgs', '/i/verified-orgs-signup'],
+      ['profile', 'Profile', '/fixture_account/', 'AppTabBar_Profile_Link']
+    ];
+    for (const [id, name, href, testid] of controls) {
+      const link = document.createElement('a');
+      link.id = 'nav-' + id;
+      link.setAttribute('role', 'link');
+      link.setAttribute('aria-label', name);
+      link.setAttribute('href', href);
+      if (testid) link.setAttribute('data-testid', testid);
+      // Whitespace is deliberate: React may add text nodes around element nodes.
+      link.innerHTML = '\n<div class="nav-row">\n<div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M2 2h20v20H2z"></path></svg>' +
+        (id === 'notifications' ? '<div id="nav-badge" class="badge" aria-label="2 unread notifications"></div>' : '') +
+        '</div>\n<div class="nav-label" dir="ltr"><span>' + name + '</span><span></span></div>\n</div>\n';
+      navigation.appendChild(link);
+    }
+    window.fixtureNativePremium = document.getElementById('nav-premium');
+    window.fixtureOutsideNodes = [...document.querySelectorAll('#outside-navigation > *')];
+    window.fixtureNativeClicks = 0;
+    window.fixtureNativePremium.addEventListener('click', () => window.fixtureNativeClicks++);
+    document.addEventListener('click', event => {
+      if (event.target.closest('a[href]')) event.preventDefault();
+    });
+  </script>
+</body>
+</html>

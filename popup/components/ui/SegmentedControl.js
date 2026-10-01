@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { defaultPreferences } from "../../../storage-keys";
-import { getStorage, setStorage } from "../../utilities/chromeStorage";
+import { useStorageValueState } from "../../utilities/useStorageKeyState";
 import { styled } from "@stitches/react";
 
 const StyledSegmentedControlList = styled(TabsPrimitive.List, {
@@ -46,42 +46,28 @@ const StyledSegmentedControlRoot = styled(TabsPrimitive.Root, {
   overflow: "hidden",
 });
 
-export const SegmentedControlList = ({ segments }) => (
+export const SegmentedControlList = ({ segments, disabled = false }) => (
   <StyledSegmentedControlList>
     {segments.map((segment) => (
-      <SegmentedControlTrigger key={segment.value} value={segment.value} label={segment.label} />
+      <SegmentedControlTrigger key={segment.value} value={segment.value} label={segment.label} disabled={disabled} />
     ))}
   </StyledSegmentedControlList>
 );
 
-export const SegmentedControlTrigger = ({ value, label }) => <StyledSegmentedControlTrigger value={value}>{label}</StyledSegmentedControlTrigger>;
+export const SegmentedControlTrigger = ({ value, label, disabled = false }) => <StyledSegmentedControlTrigger value={value} disabled={disabled}>{label}</StyledSegmentedControlTrigger>;
 
 export const SegmentedControl = ({ segments = [], storageKey }) => {
-  const [value, setValue] = useState(null);
-
-  useEffect(() => {
-    getStorage(storageKey).then((storedValue) => {
-      if (storedValue !== undefined) {
-        setValue(storedValue);
-      } else {
-        setValue(defaultPreferences[storageKey] || segments[0]?.value || null);
-      }
-    });
-  }, [storageKey]);
-
-  const handleValueChange = async (newValue) => {
-    setValue(newValue);
-
-    await setStorage({ [storageKey]: newValue });
-  };
+  const [storedValue, setValue, loaded] = useStorageValueState(storageKey);
 
   if (segments.length === 0) {
     return null;
   }
+  const fallback = defaultPreferences[storageKey] ?? segments[0].value;
+  const value = segments.some((segment) => segment.value === storedValue) ? storedValue : segments.some((segment) => segment.value === fallback) ? fallback : segments[0].value;
 
   return (
-    <StyledSegmentedControlRoot value={value || segments[0].value} onValueChange={handleValueChange} defaultValue={segments[0].value}>
-      <SegmentedControlList segments={segments} />
+    <StyledSegmentedControlRoot value={value} onValueChange={setValue}>
+      <SegmentedControlList segments={segments} disabled={!loaded} />
     </StyledSegmentedControlRoot>
   );
 };

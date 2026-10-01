@@ -1,66 +1,88 @@
-export const addSidebarButton = ({ name, href, userHref, onClick, svgAsset }) => {
-  // Let's find all sidebar buttons with the same name
-  const existingElements = [
-    ...document.querySelectorAll(`nav[role="navigation"] > [aria-label="${name}"]`),
-    ...document.querySelectorAll(`nav[role="navigation"] > [aria-label="${name.toLowerCase()}"]`),
-  ];
+import selectors from "../../selectors";
 
-  // We base new sidebar buttons on the existing "Profile" one, so let's get it:
-  const profileNode = document.querySelector('nav[role="navigation"] > a[role="link"][data-testid="AppTabBar_Profile_Link"]');
-  if (!profileNode) {
-    return;
-  }
+const templates = new WeakMap();
 
-  // It might happen when resizing the page that a sidebar button is added by X
-  // again dynamically while we also added it — so when we find more than one,
-  // we remove all but the first one to fix this:
-  if (existingElements.length > 1) {
-    existingElements.slice(1).forEach((element) => element.remove());
-  }
-
-  // We're left with a single existing element:
-  const existingElement = existingElements[0];
-
-  if (existingElement) {
-    const hasChanged =
-      (profileNode.querySelector("span") && !existingElement.querySelector("span")) || (!profileNode.querySelector("span") && existingElement.querySelector("span"));
-
-    if (!hasChanged) {
-      return;
-    }
-
-    const newNode = createNewElement({ name, href, userHref, onClick, svgAsset, profileNode });
-    existingElement.replaceWith(newNode);
-  } else {
-    const newNode = createNewElement({ name, href, userHref, onClick, svgAsset, profileNode });
-    profileNode.insertAdjacentElement("beforebegin", newNode);
-  }
+const localPath = (href) => {
+  if (!href) return;
+  try {
+    const url = new URL(href, window.location.origin);
+    if (url.origin === window.location.origin) return url.pathname;
+  } catch {}
 };
 
-const createNewElement = ({ profileNode, name, href, userHref, onClick, svgAsset }) => {
-  let newNode;
+export const getSidebarScreenName = () => {
+  const profileHref = document.querySelector(selectors.sidebarLinks.profile)?.getAttribute("href");
+  return localPath(profileHref)?.match(/^\/([^/]+)\/?$/)?.[1];
+};
 
-  try {
-    if (href || userHref) {
-      newNode = profileNode.cloneNode(true);
-      if (href) newNode.href = href;
-      if (userHref) newNode.href += userHref;
-    } else if (onClick) {
-      newNode = document.createElement("div");
-      newNode.innerHTML = profileNode.innerHTML;
-      newNode.style.cursor = "pointer";
-      newNode.onclick = () => onClick(newNode);
-    }
+export const addSidebarButton = ({ name, href, userHref, onClick, svgAsset, nativeSelector }) => {
+  const profileNode = document.querySelector(`${selectors.leftSidebarLinks} > a[role="link"][data-testid="AppTabBar_Profile_Link"]`);
+  const navigation = profileNode?.parentElement;
+  if (!navigation) return;
 
-    newNode.setAttribute("aria-label", name);
-    newNode.removeAttribute("data-testid");
-    newNode.classList.add("mt-sidebar-button"); // To style it in main.css
-    newNode.firstChild.firstChild.firstChild.innerHTML = svgAsset;
-    newNode.firstChild.lastChild.firstChild.innerText = name;
-  } catch (error) {
-    console.log(`❌ Error creating ${name} sidebar button`);
-    console.warn(error);
+  let destination = href;
+  if (userHref) {
+    const profilePath = localPath(profileNode.getAttribute("href"));
+    if (!profilePath || !/^\/[^/]+\/?$/.test(profilePath)) return;
+    destination = `${profilePath.replace(/\/$/, "")}${userHref}`;
   }
 
+  const matches = [...navigation.children].filter((element) => {
+    if (nativeSelector && element.matches(nativeSelector)) return true;
+    if (element.getAttribute("aria-label")?.toLowerCase() === name.toLowerCase()) return true;
+    if (!destination || !element.matches("a[href]")) return false;
+    const path = localPath(element.getAttribute("href"));
+    return path === destination || (userHref && path?.endsWith(userHref));
+  });
+  const owned = matches.filter((element) => element.classList.contains("mt-sidebar-button"));
+  const native = matches.find((element) => !element.classList.contains("mt-sidebar-button"));
+
+  // X owns its native navigation nodes and handlers. Remove only our duplicates.
+  if (native) {
+    owned.forEach((element) => element.remove());
+    return native;
+  }
+
+  const existing = owned[0];
+  owned.slice(1).forEach((element) => element.remove());
+  const template = `${destination || ""}\n${profileNode.className}\n${profileNode.innerHTML}`;
+  if (existing && templates.get(existing) === template) return existing;
+
+  const newNode = createNewElement({ name, destination, onClick, svgAsset, profileNode });
+  if (!newNode) return;
+  templates.set(newNode, template);
+  if (existing) existing.replaceWith(newNode);
+  else navigation.insertBefore(newNode, profileNode);
+  return newNode;
+};
+
+const createNewElement = ({ profileNode, name, destination, onClick, svgAsset }) => {
+  if (!destination && !onClick) return;
+  const newNode = destination ? profileNode.cloneNode(true) : document.createElement("button");
+  if (destination) {
+    newNode.setAttribute("href", destination);
+  } else {
+    newNode.className = profileNode.className;
+    newNode.innerHTML = profileNode.innerHTML;
+    newNode.type = "button";
+    newNode.style.cssText = "border:0;background:none;padding:0;text-align:inherit;font:inherit;color:inherit;cursor:pointer";
+    newNode.onclick = () => onClick(newNode);
+  }
+
+  newNode.setAttribute("aria-label", name);
+  newNode.removeAttribute("aria-labelledby");
+  newNode.removeAttribute("aria-describedby");
+  newNode.removeAttribute("aria-current");
+  newNode.removeAttribute("aria-selected");
+  for (const element of [newNode, ...newNode.querySelectorAll("[id], [data-testid]")]) {
+    element.removeAttribute("id");
+    element.removeAttribute("data-testid");
+  }
+  newNode.classList.add("mt-sidebar-button");
+  const icon = newNode.querySelector("svg");
+  if (!icon) return;
+  icon.innerHTML = svgAsset;
+  const label = newNode.querySelector("span");
+  if (label) label.textContent = name;
   return newNode;
 };

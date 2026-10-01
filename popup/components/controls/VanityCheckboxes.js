@@ -1,137 +1,66 @@
 import { useEffect, useState } from "react";
-import { KeyAllVanity, KeyFollowCount, KeyLikeCount, KeyReplyCount, KeyRetweetCount } from "../../../storage-keys";
+import { KeyFollowCount, KeyLikeCount, KeyReplyCount, KeyRetweetCount } from "../../../storage-keys";
 import { getStorage, setStorage } from "../../utilities/chromeStorage";
 import ToggleChevron from "../ui/ToggleChevron";
 import { CheckboxControl } from "../ui/checkboxes";
 
+const countKeys = [KeyReplyCount, KeyRetweetCount, KeyLikeCount, KeyFollowCount];
+const keyForType = { reply: KeyReplyCount, retweet: KeyRetweetCount, like: KeyLikeCount, follow: KeyFollowCount };
+const hiddenFrom = (values) => Object.fromEntries(countKeys.map((key) => [key, values[key] === "hide"]));
+
 const VanityCheckboxes = () => {
   const [showVanityCheckboxes, setShowVanityCheckboxes] = useState(false);
-  const [hideAll, setHideAll] = useState(false);
-  const [hideReply, setHideReply] = useState(false);
-  const [hideRetweet, setHideRetweet] = useState(false);
-  const [hideLike, setHideLike] = useState(false);
-  const [hideFollow, setHideFollow] = useState(false);
+  const [hiddenCounts, setHiddenCounts] = useState(() => hiddenFrom({}));
+  const [loaded, setLoaded] = useState(false);
+  const hiddenValues = Object.values(hiddenCounts);
+  const hideAll = hiddenValues.every(Boolean) ? true : hiddenValues.some(Boolean) ? "indeterminate" : false;
 
   useEffect(() => {
-    const getUserDefaultAll = async () => {
-      try {
-        const userDefaultAll = await getStorage(KeyAllVanity);
-        if (userDefaultAll) {
-          setHideAll(userDefaultAll === "hide" ? true : false);
-        }
-      } catch (error) {
-        console.warn(error);
-      }
+    let active = true;
+    let initialReadComplete = false;
+    const changesBeforeRead = {};
+    const storageEvents = globalThis.chrome?.storage?.onChanged;
+    const onStorageChanged = (changes, area) => {
+      if (!active || area !== "local") return;
+      const next = Object.fromEntries(countKeys.filter((key) => Object.hasOwn(changes, key)).map((key) => [key, changes[key].newValue]));
+      if (!Object.keys(next).length) return;
+      if (!initialReadComplete) Object.assign(changesBeforeRead, next);
+      else setHiddenCounts((current) => ({ ...current, ...Object.fromEntries(Object.entries(next).map(([key, value]) => [key, value === "hide"])) }));
     };
-    const getUserDefaultReply = async () => {
-      try {
-        const userDefaultReply = await getStorage(KeyReplyCount);
-        userDefaultReply && setHideReply(userDefaultReply === "hide" ? true : false);
-      } catch (error) {
-        console.warn(error);
-      }
+    storageEvents?.addListener(onStorageChanged);
+    getStorage(countKeys).then((values) => {
+      if (!active) return;
+      setHiddenCounts(hiddenFrom({ ...values, ...changesBeforeRead }));
+      initialReadComplete = true;
+      setLoaded(true);
+    }).catch((error) => {
+      if (!active) return;
+      console.warn(error);
+      initialReadComplete = true;
+      setLoaded(true);
+    });
+    return () => {
+      active = false;
+      storageEvents?.removeListener(onStorageChanged);
     };
-    const getUserDefaultLike = async () => {
-      try {
-        const userDefaultLike = await getStorage(KeyLikeCount);
-        userDefaultLike && setHideLike(userDefaultLike === "hide" ? true : false);
-      } catch (error) {
-        console.warn(error);
-      }
-    };
-    const getUserDefaultRetweet = async () => {
-      try {
-        const userDefaultRetweet = await getStorage(KeyRetweetCount);
-        userDefaultRetweet && setHideRetweet(userDefaultRetweet === "hide" ? true : false);
-      } catch (error) {
-        console.warn(error);
-      }
-    };
-    const getUserDefaultFollow = async () => {
-      try {
-        const userDefaultFollow = await getStorage(KeyFollowCount);
-        userDefaultFollow && setHideFollow(userDefaultFollow === "hide" ? true : false);
-      } catch (error) {
-        console.warn(error);
-      }
-    };
-
-    getUserDefaultAll();
-    getUserDefaultReply();
-    getUserDefaultLike();
-    getUserDefaultRetweet();
-    getUserDefaultFollow();
   }, []);
 
   const onCheckedChange = async (type, checked) => {
-    switch (type) {
-      case "all":
-        setHideAll(checked);
-        setHideReply(checked);
-        setHideRetweet(checked);
-        setHideLike(checked);
-        setHideFollow(checked);
-        try {
-          await setStorage({
-            [KeyAllVanity]: checked ? "hide" : "show",
-            [KeyReplyCount]: checked ? "hide" : "show",
-            [KeyRetweetCount]: checked ? "hide" : "show",
-            [KeyLikeCount]: checked ? "hide" : "show",
-            [KeyFollowCount]: checked ? "hide" : "show",
-          });
-        } catch (error) {
-          console.warn(error);
-        }
-        break;
-
-      case "reply":
-        setHideReply(checked);
-        try {
-          await setStorage({
-            [KeyReplyCount]: checked ? "hide" : "show",
-          });
-        } catch (error) {
-          console.warn(error);
-        }
-        break;
-
-      case "retweet":
-        setHideRetweet(checked);
-        try {
-          await setStorage({
-            [KeyRetweetCount]: checked ? "hide" : "show",
-          });
-        } catch (error) {
-          console.warn(error);
-        }
-        break;
-
-      case "like":
-        setHideLike(checked);
-        try {
-          await setStorage({
-            [KeyLikeCount]: checked ? "hide" : "show",
-          });
-        } catch (error) {
-          console.warn(error);
-        }
-        break;
-
-      case "follow":
-        setHideFollow(checked);
-        try {
-          await setStorage({
-            [KeyFollowCount]: checked ? "hide" : "show",
-          });
-        } catch (error) {
-          console.warn(error);
-        }
-        break;
+    if (!loaded) return;
+    const hidden = checked === true;
+    const keys = type === "all" ? countKeys : [keyForType[type]];
+    const changedCounts = Object.fromEntries(keys.map((key) => [key, hidden]));
+    setHiddenCounts((current) => ({ ...current, ...changedCounts }));
+    try {
+      await setStorage(Object.fromEntries(keys.map((key) => [key, hidden ? "hide" : "show"])));
+    } catch (error) {
+      console.warn(error);
+      setHiddenCounts(hiddenFrom(await getStorage(countKeys)));
     }
   };
 
   return (
-    <>
+    <fieldset disabled={!loaded} className="w-full min-w-0 border-0 p-0 m-0">
       <CheckboxControl
         id="all"
         label="Engagements Under Posts"
@@ -149,7 +78,7 @@ const VanityCheckboxes = () => {
             label="Reply Count from Tweets"
             description="Hides only the numeric reply total shown under posts. You can still open the replies or use the reply action."
             onCheckedChange={(checked) => onCheckedChange("reply", checked)}
-            checked={hideReply}
+            checked={hiddenCounts[KeyReplyCount]}
           />
           <CheckboxControl
             crossedIcon
@@ -157,7 +86,7 @@ const VanityCheckboxes = () => {
             label="Retweet Count from Tweets"
             description="Hides repost and quote-post totals under posts while keeping the repost menu and action available."
             onCheckedChange={(checked) => onCheckedChange("retweet", checked)}
-            checked={hideRetweet}
+            checked={hiddenCounts[KeyRetweetCount]}
           />
           <CheckboxControl
             crossedIcon
@@ -165,7 +94,7 @@ const VanityCheckboxes = () => {
             label="Like Count from Tweets"
             description="Hides like totals in timelines and tweet detail pages while keeping the like button itself visible."
             onCheckedChange={(checked) => onCheckedChange("like", checked)}
-            checked={hideLike}
+            checked={hiddenCounts[KeyLikeCount]}
           />
           <CheckboxControl
             crossedIcon
@@ -173,11 +102,11 @@ const VanityCheckboxes = () => {
             label="Follower/Following Count"
             description="Hides follower and following totals on profiles so accounts are not visually framed around audience size."
             onCheckedChange={(checked) => onCheckedChange("follow", checked)}
-            checked={hideFollow}
+            checked={hiddenCounts[KeyFollowCount]}
           />
         </div>
       )}
-    </>
+    </fieldset>
   );
 };
 

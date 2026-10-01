@@ -4,7 +4,7 @@ const selectors = {};
 selectors.mainWrapper = `main[role="main"]`;
 selectors.mainColumn = `[data-testid="primaryColumn"]`;
 selectors.topHeader = `${selectors.mainColumn} > div > div:nth-of-type(1)`;
-selectors.timelineTabs = `${selectors.mainColumn} > div:first-child > div:first-child > div:first-child > div:only-child > nav:only-child`;
+selectors.timelineTabs = `${selectors.mainColumn} nav[role="navigation"]:has([role="tab"])`;
 selectors.leftSidebar = `header[role="banner"]`;
 selectors.leftSidebarLinks = `${selectors.leftSidebar} nav[role="navigation"]`;
 selectors.leftSidebarUnreadBadge = `${selectors.leftSidebarLinks} a svg + div[aria-label]:only-of-type`;
@@ -16,7 +16,7 @@ selectors.sidebarLinks = {
   messages: `${selectors.leftSidebar} [data-testid="AppTabBar_DirectMessage_Link"]`,
   bookmarks: `${selectors.leftSidebar} a[href*="bookmarks"]`,
   jobs: `${selectors.leftSidebar} a[href*="jobs"]`,
-  articles: 'a[href="/compose/articles"]',
+  articles: `${selectors.leftSidebar} a[href="/compose/articles"]`,
   topics: `${selectors.leftSidebar} a[href*=topics]`,
   circles: `${selectors.leftSidebar} a[href*=circles]`,
   communities: `${selectors.leftSidebar} a[href*=communities]`,
@@ -36,12 +36,12 @@ selectors.accountSwitcherLabel_hover = `${selectors.accountSwitcherButton}:hover
 selectors.rightSidebar = `[data-testid="sidebarColumn"]`;
 // Add Grok drawer selector
 selectors.grokDrawer = `[data-testid="GrokDrawer"]`;
-selectors.grokDrawerHeader = `div[data-testid="GrokDrawerHeader"]`;
+selectors.grokDrawerHeader = `[data-testid="GrokDrawerHeader"]`;
 // Timeline
-selectors.timelineTablist = `div[data-testid='ScrollSnap-List'][role='tablist']`;
-selectors.timelineTab = `div[role='tab']`;
+selectors.timelineTablist = `${selectors.timelineTabs} [role="tablist"]`;
+selectors.timelineTab = `[role="tab"]`;
 selectors.timelineTabPresentation = `div[role='presentation']`;
-selectors.timelineTabSelected = `div[role='tab'][aria-selected='true']`;
+selectors.timelineTabSelected = `[role="tab"][aria-selected="true"]`;
 selectors.timelineTabText = `div[dir='ltr'] > span`;
 selectors.timelineOptions = `div[aria-label='Timeline options']`;
 selectors.topTweetsOn = `div[aria-label='Top Tweets on']`;

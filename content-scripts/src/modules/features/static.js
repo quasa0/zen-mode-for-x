@@ -28,7 +28,6 @@ import {
   KeyNotificationsButton,
   KeyProfileButton,
   KeyRecentMedia,
-  KeyRemovePromotedPosts,
   KeyRemoveTimelineBorders,
   KeyRemoveTimelineTabs,
   KeyRemoveTopicsToFollow,
@@ -84,7 +83,6 @@ import {
 } from "../options/navigation";
 import {
   changeFollowingTimeline,
-  changePromotedPosts,
   changeRecentMedia,
   changeStickyHeader,
   changeTimelineBorders,
@@ -96,6 +94,8 @@ import {
 } from "../options/timeline";
 import { changeTypefullyEnhancementsButtons } from "../options/typefully";
 import { changeVideoResolutionOverlay } from "../options/videoResolutionOverlay";
+import { changePostFilters } from "../options/postFilters";
+import { changeMindfulScrolling } from "../options/mindfulScrolling";
 import { changeWriterMode } from "../options/writerMode";
 
 export const staticFeatures = {
@@ -110,7 +110,8 @@ export const staticFeatures = {
     changeHideViewCounts(data[KeyHideViewCount]);
     changeRecentMedia(data[KeyRecentMedia]);
     changeTrendsHomeTimeline(data[KeyTrendsHomeTimeline], data[KeyWriterMode]);
-    changePromotedPosts(data[KeyRemovePromotedPosts]);
+    changePostFilters(data);
+    changeMindfulScrolling(data);
     changeTopicsToFollow(data[KeyRemoveTopicsToFollow]);
     changeTimelineTabs(data[KeyRemoveTimelineTabs], data[KeyWriterMode]);
     changeAiSlopButton(data[KeyAiSlopButton]);
@@ -159,5 +160,5 @@ export const staticFeatures = {
 };
 
 export const applyStaticFeatures = async (data) => {
-  Object.values(staticFeatures).forEach((feature) => feature(data));
+  for (const feature of Object.values(staticFeatures)) await feature(data);
 };

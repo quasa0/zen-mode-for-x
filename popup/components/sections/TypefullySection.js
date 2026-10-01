@@ -8,7 +8,7 @@ const TypefullySection = () => (
     <ControlsWrapper id="user-control-typefully">
       <SwitchControl
         label="Typefully Enhancements"
-        description="Adds Typefully integration shortcuts inside X, including compose, scheduling, media download, and draft-workflow helpers."
+        description="Adds Typefully shortcuts for saving drafts, replying to posts, and scheduling."
         storageKey="typefullyEnhancementsButtons"
       />
     </ControlsWrapper>

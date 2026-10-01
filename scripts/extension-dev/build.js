@@ -75,22 +75,53 @@ async function runBuild(directory, signal) {
   }
 }
 
-export async function build({ force = false, signal } = {}) {
-  signal?.throwIfAborted();
-  await mkdir(cache, { recursive: true });
-  const contentHash = await digest([...await files(join(root, "content-scripts")), join(root, "storage-keys.js")]);
-  const popupHash = await digest([...await files(join(root, "popup")), join(root, "storage-keys.js")]);
-  const inputHash = await digest([
+async function sourceSnapshot() {
+  const paths = [
     ...await files(join(root, "content-scripts")), ...await files(join(root, "popup")),
     ...await files(join(root, "css")), ...await files(join(root, "fonts")), ...await files(join(root, "images")),
     join(root, "storage-keys.js"), join(root, "extension-manifests.js"), join(root, "background.js"),
-  ]);
+  ].sort();
+  const entries = await Promise.all(paths.map(async path => [path, await readFile(path)]));
+  const fromEntries = (filter = () => true) => {
+    const value = createHash("sha256");
+    for (const [path, data] of entries.filter(([path]) => filter(path))) { value.update(path); value.update(data); }
+    return value.digest("hex");
+  };
+  const settingsPath = join(root, "storage-keys.js");
+  return {
+    inputHash: fromEntries(),
+    contentHash: fromEntries(path => path === settingsPath || path.startsWith(join(root, "content-scripts") + "/")),
+    popupHash: fromEntries(path => path === settingsPath || path.startsWith(join(root, "popup") + "/")),
+  };
+}
+
+export async function sourceDigest() { return (await sourceSnapshot()).inputHash; }
+
+export async function build({ force = false, signal, attempt = 0 } = {}) {
+  signal?.throwIfAborted();
+  await mkdir(cache, { recursive: true });
+  // Derive component and complete-source hashes from the same bytes. Separate
+  // reads can otherwise pair a new source receipt with an old compiler cache.
+  const { contentHash, popupHash, inputHash } = await sourceSnapshot();
+  const retryChangedSource = () => {
+    if (attempt >= 3) throw new Error("Sources kept changing during the build. The last completed bundle was preserved.");
+    console.log("Sources changed during the build; rebuilding before reload.");
+    return build({force:true,signal,attempt:attempt + 1});
+  };
+  if (await sourceDigest() !== inputHash) return retryChangedSource();
   let previous = {};
   try { previous = JSON.parse(await readFile(join(cache, "build-state.json"), "utf8")); } catch { /* First build. */ }
   const exists = async (path) => { try { await access(path); return true; } catch { return false; } };
-  if (force || previous.contentHash !== contentHash || !await exists(join(root, "content-scripts/dist/main.js"))) await runBuild("content-scripts", signal);
-  if (force || previous.popupHash !== popupHash || !await exists(join(root, "popup/out/index.html"))) await runBuild("popup", signal);
+  const contentOutputPath = join(root, "content-scripts/dist/main.js");
+  const popupOutputPath = join(root, "popup/out");
+  const currentContentOutput = await exists(contentOutputPath) ? hash(await readFile(contentOutputPath)) : undefined;
+  const currentPopupOutput = await exists(join(popupOutputPath, "index.html")) ? await digest(await files(popupOutputPath)) : undefined;
+  if (force || previous.contentHash !== contentHash || !currentContentOutput || previous.rawContentSha256 !== currentContentOutput) await runBuild("content-scripts", signal);
+  if (force || previous.popupHash !== popupHash || !currentPopupOutput || previous.popupOutputHash !== currentPopupOutput) await runBuild("popup", signal);
   signal?.throwIfAborted();
+  if (await sourceDigest() !== inputHash) return retryChangedSource();
+  const rawContentSha256 = hash(await readFile(contentOutputPath));
+  const popupOutputHash = await digest(await files(popupOutputPath));
   const manifestSource = join(root, "extension-manifests.js");
   const { MANIFEST_CHROME } = await import(`${pathToFileURL(manifestSource).href}?source=${hash(await readFile(manifestSource))}`);
   const staging = join(cache, `staging-${randomUUID()}`);
@@ -108,8 +139,10 @@ export async function build({ force = false, signal } = {}) {
     for (const resource of ["index.html", "background.js", "css/main.css", "css/typefully.css", ...MANIFEST_CHROME.content_scripts.flatMap((config) => config.js)]) {
       await access(join(staging, resource));
     }
-    const info = { revision, inputHash, contentHash, popupHash, builtAt: new Date().toISOString(), contentSha256: hash(await readFile(join(staging, "dist/main.js"))) };
+    const info = { revision, inputHash, contentHash, popupHash, rawContentSha256, popupOutputHash, builtAt: new Date().toISOString(), contentSha256: hash(await readFile(join(staging, "dist/main.js"))) };
     await writeFile(join(staging, "build-info.json"), JSON.stringify(info, null, 2));
+    if (await sourceDigest() !== inputHash || hash(await readFile(contentOutputPath)) !== rawContentSha256 ||
+        await digest(await files(popupOutputPath)) !== popupOutputHash) return retryChangedSource();
     const backup = join(cache, "previous-bundle");
     await rm(backup, { recursive: true, force: true });
     if (await exists(bundlePath)) await rename(bundlePath, backup);

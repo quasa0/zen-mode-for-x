@@ -1,7 +1,7 @@
-import { KeyExtensionStatus } from "../../storage-keys";
+import { allSettingsKeys, KeyExtensionStatus } from "../../storage-keys";
 import { applyStaticFeatures } from "./modules/features/static";
+import { runDynamicFeatures } from "./modules/features/dynamic";
 import { initializeExtension } from "./modules/initialize";
-import constructNewData from "./modules/utilities/constructNewData";
 import { getStorage } from "./modules/utilities/storage";
 
 /**
@@ -21,7 +21,8 @@ const hasStorageApi = () => Boolean(chrome?.storage?.local);
 // Listen to settings changes
 try {
   if (hasStorageApi()) {
-    chrome.storage.onChanged.addListener(async (changes) => {
+    chrome.storage.onChanged.addListener(async (changes, area) => {
+      if (area !== "local") return;
       try {
         if (changes[KeyExtensionStatus]?.newValue !== changes[KeyExtensionStatus]?.oldValue) {
           window.location.reload();
@@ -31,10 +32,11 @@ try {
         const status = await getStorage(KeyExtensionStatus);
         if (status === "off") return;
 
-        const newData = constructNewData(changes);
-        applyStaticFeatures(newData);
-      } catch {
-        // Existing tabs can keep stale content scripts after the extension reloads.
+        // Apply a complete snapshot so dependent features remain consistent.
+        await applyStaticFeatures(await getStorage(allSettingsKeys));
+        runDynamicFeatures();
+      } catch (error) {
+        console.error("Zen for X settings update failed", error);
       }
     });
   }
@@ -50,6 +52,6 @@ const init = async () => {
   await initializeExtension();
 };
 
-init().catch(() => {
-  // Existing tabs can keep stale content scripts after the extension reloads.
+init().catch((error) => {
+  console.error("Zen for X initialization failed", error);
 });

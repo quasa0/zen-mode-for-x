@@ -1,7 +1,6 @@
-import { KeyHideGrokDrawer, KeyRecentMedia } from "../../../../storage-keys";
 import selectors from "../../selectors";
 import addStyles, { removeStyles, stylesExist } from "../utilities/addStyles";
-import { getStorage } from "../utilities/storage";
+export { changeRecentMedia } from "./recentMedia";
 
 export const changeTimelineWidth = (timelineWidth) => {
   switch (timelineWidth) {
@@ -130,30 +129,11 @@ export const changeStickyHeader = (stickyHeader) => {
       addStyles(
         "stickyHeader",
         `
-        ${selectors.mainColumn} > div > div {
-          position: unset;
+        ${selectors.topHeader} {
+          position: static !important;
         }
         `
       );
-      break;
-  }
-};
-
-export const changePromotedPosts = (removePromotedPosts) => {
-  switch (removePromotedPosts) {
-    case "off":
-      addStyles(
-        "removePromotedPosts",
-        `
-        [data-testid="placementTracking"] article {
-          display: flex;
-        }
-        `
-      );
-      break;
-
-    case "on":
-      removeStyles("removePromotedPosts");
       break;
   }
 };
@@ -188,21 +168,29 @@ export const changeTopicsToFollow = (removeTopicsToFollow) => {
 };
 
 function hideWhoToFollowSuggestions() {
-  const suggestionSections = document.querySelectorAll(`${selectors.mainColumn} section[aria-labelledby^="accessible-list-"]`);
-
-  suggestionSections.forEach((section) => {
-    if (section.closest('[aria-label="Lists timeline"]')) return;
-
-    const headingText = section.querySelector('h2, [role="heading"]')?.textContent?.trim().toLowerCase();
-
-    if (headingText === "who to follow") {
-      section.classList.add("mt-whoToFollow");
-    }
+  document.querySelectorAll(".mt-whoToFollow").forEach((section) => section.classList.remove("mt-whoToFollow"));
+  const candidates = new Set(document.querySelectorAll(`
+    ${selectors.mainColumn} aside[role="complementary"]:has([data-testid="UserCell"]),
+    ${selectors.rightSidebar} aside[role="complementary"]:has([data-testid="UserCell"])
+  `));
+  document.querySelectorAll(`${selectors.mainColumn} h2, ${selectors.mainColumn} [role="heading"]`).forEach((heading) => {
+    if (heading.textContent.trim().toLowerCase() !== "who to follow") return;
+    const section = heading.closest('[data-testid="cellInnerDiv"], section[aria-labelledby^="accessible-list-"]');
+    if (section) candidates.add(section);
+  });
+  candidates.forEach((section) => {
+    if (section.closest('[aria-label="Lists timeline"]') || section.closest(selectors.tweet)) return;
+    if (section.querySelector(selectors.tweet) || section.querySelector('[role="textbox"]')) return;
+    // User search results and list membership are primary content, not recommendations.
+    if (window.location.pathname.startsWith("/i/lists/") && section.closest(selectors.mainColumn)) return;
+    section.classList.add("mt-whoToFollow");
   });
 }
 
+const isHomeTimeline = () => window.location.pathname === "/home" || window.location.pathname === "/";
+
 export const changeTimelineTabs = (removeTimelineTabs, writerMode) => {
-  if (writerMode === "on" || window.location.pathname.includes("compose/tweet") || !window.location.pathname.includes("/home") || !window.location.pathname === "/") {
+  if (writerMode === "on" || !isHomeTimeline()) {
     removeStyles("removeTimelineTabs");
     return;
   }
@@ -227,63 +215,8 @@ export const changeTimelineTabs = (removeTimelineTabs, writerMode) => {
   }
 };
 
-export const changeRecentMedia = async (recentMedia) => {
-  const userProfile = document.querySelector('meta[content*="twitter://user?screen_name="]');
-
-  if (!userProfile) {
-    removeStyles("recentMedia");
-    return;
-  }
-
-  const sidebarPhotoGrid = document
-    .querySelector(selectors.rightSidebar)
-    ?.querySelector('[aria-label][tabindex="0"]')
-    ?.querySelector('[style="padding-bottom: 56.25%;"]')?.parentElement;
-
-  if (!sidebarPhotoGrid) return;
-
-  const run = (rm) => {
-    switch (rm) {
-      case "off":
-        removeStyles("recentMedia");
-        sidebarPhotoGrid.classList.remove("mt-recentMedia-photoGrid");
-        break;
-
-      case "on":
-        addStyles(
-          "recentMedia",
-          `
-            @media only screen and (min-width: 1265px) {
-              .mt-recentMedia-photoGrid {
-                visibility: visible;
-                position: fixed;
-                right: 16px;
-                top: 70px;
-                width: 300px;
-              }
-              
-              [data-testid="primaryColumn"] {
-                transform: translateX(-64px);
-              }
-            }
-            `
-        );
-        sidebarPhotoGrid.classList.add("mt-recentMedia-photoGrid");
-
-        break;
-    }
-  };
-
-  if (recentMedia) {
-    run(recentMedia);
-  } else {
-    const setting = await getStorage(KeyRecentMedia);
-    run(setting);
-  }
-};
-
 export const changeTrendsHomeTimeline = (trendsHomeTimeline, writerMode) => {
-  if (writerMode === "on" || window.location.pathname.includes("compose/tweet") || !window.location.pathname.includes("/home") || !window.location.pathname === "/") {
+  if (writerMode === "on" || !isHomeTimeline()) {
     removeStyles("trendsHomeTimeline");
     return;
   }
@@ -341,152 +274,78 @@ export const changeTrendsHomeTimeline = (trendsHomeTimeline, writerMode) => {
 };
 
 export const changeFollowingTimeline = (followingTimeline) => {
-  if (followingTimeline !== "on") return;
+  if (followingTimeline !== "on" || !isHomeTimeline()) return;
 
   const tablist = document.querySelector(selectors.timelineTablist);
-  const selectedTab = document.querySelector(`${selectors.timelineTablist} ${selectors.timelineTabSelected}`);
+  const selectedTab = tablist?.querySelector(selectors.timelineTabSelected);
 
   if (!tablist || !selectedTab) return;
 
-  // Get localized "Following" text (it's the second tab)
-  const followingTabSpan = tablist.querySelector(`${selectors.timelineTabPresentation}:nth-of-type(2) span`);
-  if (!followingTabSpan) return;
-
-  const followingTabText = followingTabSpan.textContent.toLowerCase();
-  const selectedTabSpan = selectedTab.querySelector(selectors.timelineTabText);
-  if (!selectedTabSpan) return;
-
-  const selectedTabText = selectedTabSpan.textContent.toLowerCase();
-
-  if (selectedTabText === followingTabText) return; // Already on the "Following" tab
-
-  const secondTab = tablist.querySelector(`${selectors.timelineTabPresentation}:nth-child(2) ${selectors.timelineTab}`);
-  if (!secondTab) return;
-
-  secondTab.click();
+  // Home places Following second; compare elements rather than translated labels.
+  const followingTab = tablist.querySelectorAll(selectors.timelineTab)[1];
+  if (!followingTab || followingTab === selectedTab || followingTab.getAttribute("aria-selected") === "true") return;
+  followingTab.click();
 };
 
-let lt1; // Latest Tweets timeout 1
-let lt2; // Latest Tweets timeout 2
-export const changeLatestTweets = (latestTweets) => {
-  if (latestTweets !== "on") return;
+const grokButtons = new Set();
+let grokHidden = false;
+let grokOpenRequested = false;
+let grokOpenSeen = false;
+let grokObservedHeader;
+let grokResizeObserver;
 
-  const showLatestTweets = () => {
-    // Check if the "Latest Tweets" options is already selected to avoid unnecessary clicks
-    const latestSelected = !!document.querySelector(`${selectors.timelineTablist} > div:last-child > a[aria-selected='true']`);
-    // Check if there's a menu button
-    const menuitem = document.querySelector(selectors.menuItem);
-
-    if (latestSelected || !menuitem) return;
-
-    const run = () => {
-      // Check if the nav bar with "Home" and "Latest Tweets" exists
-      const optionBarExists = !!document.querySelector(selectors.timelineTablist);
-
-      if (!optionBarExists) {
-        /*
-            If it doesn't, we have to get it to display
-            1. Click the Timeline Options button
-            2. Click the first option in the popup
-          */
-        const timelineOptions = document.querySelector(selectors.timelineOptions);
-        const topTweetsOn = document.querySelector(selectors.topTweetsOn);
-
-        const clickMenuButton = (isTimelineOptions) => {
-          clearTimeout(lt1);
-          lt1 = setTimeout(() => {
-            menuitem && menuitem.click();
-
-            if (isTimelineOptions) {
-              // Click the "Latest Tweets" nav bar option
-              const latestTweetsNavBarOption = document.querySelector(`${selectors.timelineTablist} > div:last-child > a`);
-              latestTweetsNavBarOption && latestTweetsNavBarOption.click();
-            }
-          }, 100);
-          return lt1;
-        };
-
-        if (timelineOptions) {
-          timelineOptions.click();
-          clickMenuButton(true);
-        } else if (topTweetsOn) {
-          topTweetsOn.click();
-          clickMenuButton(false);
-        }
-      }
-    };
-
-    clearTimeout(lt2);
-    lt2 = setTimeout(run, 500);
-    return lt2;
-  };
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", showLatestTweets);
-  } else {
-    showLatestTweets();
+function reconcileGrokDrawer() {
+  const drawer = document.querySelector(selectors.grokDrawer);
+  const header = drawer?.querySelector(selectors.grokDrawerHeader);
+  if (header !== grokObservedHeader) {
+    grokResizeObserver?.disconnect();
+    grokResizeObserver = undefined;
+    grokObservedHeader = header;
+    if (header && grokHidden) {
+      grokResizeObserver = new ResizeObserver(reconcileGrokDrawer);
+      grokResizeObserver.observe(header);
+    }
   }
-};
-
-export const enableGrokDrawerOnGrokButtonClick = (hideGrokDrawer) => {
-  const grokClickListener = () => {
-    const grokDrawer = document.querySelector(selectors.grokDrawer);
-    grokDrawer.classList.add("typefully-grok-drawer-enabled");
-  };
-
-  if (hideGrokDrawer === "off") {
-    // remove event click listener from all grok buttons, when hideGrokDrawer is off
-    const grokSvgs = document.querySelectorAll(selectors.grokSvg);
-    grokSvgs.forEach((svg) => {
-      const grokButton = svg.closest("button");
-      if (grokButton) {
-        grokButton.removeEventListener("click", grokClickListener);
-      }
-    });
-
+  if (!drawer || !grokHidden || !grokOpenRequested) return;
+  const closed = header?.tagName === "BUTTON" || (header?.children.length === 1 && header.children[0].tagName === "BUTTON");
+  if (header && !closed) grokOpenSeen = true;
+  if (closed && grokOpenSeen) {
+    grokOpenRequested = false;
+    grokOpenSeen = false;
+    drawer.classList.remove("typefully-grok-drawer-enabled");
     return;
   }
+  if (!drawer.classList.contains("typefully-grok-drawer-enabled")) drawer.classList.add("typefully-grok-drawer-enabled");
+}
 
-  let grokSvgs = document.querySelectorAll(selectors.grokSvg);
-  grokSvgs = Array.from(grokSvgs).filter((svg) => svg.closest("button"));
+const grokClickListener = () => {
+  grokOpenRequested = true;
+  grokOpenSeen = false;
+  reconcileGrokDrawer();
+};
 
-  grokSvgs.forEach((svg) => {
-    const grokButton = svg.closest("button");
-
-    if (!grokButton) return;
-
-    grokButton.addEventListener("click", grokClickListener);
-  });
-
-  const grokDrawer = document.querySelector(selectors.grokDrawer);
-  if (!grokDrawer) return;
-
-  const grokDrawerHeader = document.querySelector(selectors.grokDrawerHeader);
-  if (!grokDrawerHeader) return;
-
-  const observer = new ResizeObserver(async (entries) => {
-    const entry = entries[0];
-
-    // if entry has one child and it is a button, it means the drawer is closed.
-    // Remove the drawer if hideGrokDrawer is on.
-    if (entry.target.children.length === 1 && entry.target.children[0].tagName === "BUTTON") {
-      grokDrawer.classList.remove("typefully-grok-drawer-enabled");
-      let hideGrokDrawer = await getStorage(KeyHideGrokDrawer);
-
-      if (hideGrokDrawer === "on") {
-        addStyles(
-          "grokDrawer",
-          `${selectors.grokDrawer} {
-          display: none !important;
-        }`
-        );
-      }
-      observer.disconnect();
+export const enableGrokDrawerOnGrokButtonClick = (setting) => {
+  grokHidden = setting === "on";
+  grokButtons.forEach((button) => {
+    if (!grokHidden || !button.isConnected) {
+      button.removeEventListener("click", grokClickListener);
+      grokButtons.delete(button);
     }
   });
-
-  // observe the grok drawer header to determine if the drawer has to be hidden or not.
-  if (grokDrawerHeader) {
-    observer.observe(grokDrawerHeader);
+  if (!grokHidden) {
+    grokResizeObserver?.disconnect();
+    grokResizeObserver = undefined;
+    grokObservedHeader = undefined;
+    grokOpenRequested = false;
+    grokOpenSeen = false;
+    document.querySelectorAll(".typefully-grok-drawer-enabled").forEach((drawer) => drawer.classList.remove("typefully-grok-drawer-enabled"));
+    return;
   }
+  document.querySelectorAll(selectors.grokSvg).forEach((svg) => {
+    const button = svg.closest("button");
+    if (!button || grokButtons.has(button)) return;
+    button.addEventListener("click", grokClickListener);
+    grokButtons.add(button);
+  });
+  reconcileGrokDrawer();
 };

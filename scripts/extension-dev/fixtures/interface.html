@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Home / X</title>
+    <link id="native-favicon" rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" />
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; color: rgb(15, 20, 25); background: white; font: 16px Arial, sans-serif; }
+      header[role="banner"] { width: 230px; padding: 20px; }
+      header nav { display: flex; flex-direction: column; gap: 10px; }
+      main { display: flex; }
+      [data-testid="primaryColumn"] { width: 600px; max-width: 600px; }
+      [data-testid="sidebarColumn"] { width: 300px; padding: 16px; }
+      article { padding: 16px; border-bottom: 1px solid #ddd; min-height: 130px; }
+      .post-header { display: flex; justify-content: space-between; width: 100%; }
+      .post-actions, .native-control-slot { display: flex; align-items: center; gap: 8px; }
+      .native-control-slot { width: 24px; height: 24px; }
+      .native-control-slot button { width: 24px; height: 24px; padding: 0; border: 0; background: transparent; }
+      .native-control-slot svg { width: 18px; height: 18px; }
+      .post-content { display: flex; flex-direction: column; width: 100%; }
+      .composer { padding: 16px; }
+      [contenteditable="true"] { min-height: 40px; white-space: pre-wrap; }
+      [data-testid="toolBar"] { display: flex; gap: 8px; margin-top: 8px; }
+      [data-testid="tweetButtonInline"] { margin-left: 3px; order: 0; }
+      #sidebar-search { height: 44px; }
+      .native-search-shell { padding: 6px; height: 44px; background: rgb(239, 243, 244); }
+      #sidebar-search input { width: 120px; height: 30px; }
+      #primary-search { display: block; padding: 12px; background: rgb(210, 220, 230); }
+      #native-trends { position: fixed; top: 67px; }
+      #custom-probe { color: rgb(12, 34, 56); margin-left: 4px; }
+      [role="dialog"], [role="menu"] { position: fixed; z-index: 1000; top: 100px; left: 300px; width: 560px; padding: 20px; background: white; border: 1px solid #aaa; }
+      [role="menu"] { display: flex; flex-direction: column; gap: 12px; }
+      [role="dialog"] button { margin: 8px; }
+      #fixture-markers { position: fixed; bottom: 0; left: 0; }
+    </style>
+  </head>
+  <body>
+    <main role="main">
+      <header role="banner">
+        <nav role="navigation">
+          <a href="/home" data-testid="AppTabBar_Home_Link" aria-label="Home"><div><svg width="20" height="20"></svg><div dir="ltr">Home</div></div></a>
+          <a href="/test_account" data-testid="AppTabBar_Profile_Link" aria-label="Profile"><div><svg width="20" height="20"></svg><div dir="ltr">Profile</div></div></a>
+        </nav>
+        <a href="/compose/post" data-testid="SideNav_NewTweet_Button" aria-label="Post">Post</a>
+        <button data-testid="SideNav_AccountSwitcher_Button">Synthetic account</button>
+      </header>
+      <div data-testid="primaryColumn">
+        <div class="composer" id="inline-composer">
+          <div id="font-probe">Native font probe</div>
+          <div id="custom-probe">Custom CSS probe</div>
+          <div contenteditable="true" role="textbox" data-testid="tweetTextarea_0" aria-label="Post text"><div><div class="public-DraftStyleDefault-block"><span data-text="true">Inline draft stays separate.</span></div></div></div>
+          <div data-testid="toolBar"><button data-testid="tweetButtonInline" aria-disabled="false">Post</button></div>
+        </div>
+        <form id="primary-search" role="search"><input data-testid="SearchBox_Search_Input" placeholder="Search" aria-label="Timeline search" /></form>
+        <section id="posts"></section>
+        <div id="account-access" data-testid="accountAccessScreen"><h2>Security and account access</h2></div>
+        <button id="show-modal" type="button">Open synthetic composer</button>
+        <button id="show-schedule" type="button">Open synthetic schedule</button>
+        <button id="mutate-fixture" type="button">Mutate fixture</button>
+      </div>
+      <aside data-testid="sidebarColumn">
+        <form id="sidebar-search" class="r-13qz1uu" role="search"><div><div class="native-search-shell"><div><div data-testid="SearchBox_Search_Input_label"><input data-testid="SearchBox_Search_Input" placeholder="Search" aria-label="Sidebar search" /></div></div></div></div><div><div role="listbox">Synthetic search suggestions</div></div></form>
+        <section id="native-trends" aria-labelledby="accessible-list-trends"><h2 id="accessible-list-trends">Trends for you</h2></section>
+      </aside>
+    </main>
+    <div id="fixture-markers"></div>
+    <script>
+      const fixture = window.interfaceFixture = {
+        reportRequests: [], reportSelections: [], blockedAuthors: [], menuOpens: [], reportAvailable: true, cancelReportAfterSpam: false,
+        blockDialogHandle: null, modalOpens: 0, nativePostActions: 0, mutations: 0,
+      };
+      const svg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h20" /></svg>';
+      function addPost(id, author, statusId, quoted = false) {
+        const post = document.createElement('article');
+        post.id = id;
+        post.dataset.testid = 'tweet';
+        post.dataset.author = author;
+        post.dataset.statusId = statusId;
+        post.setAttribute('role', 'article');
+        const quote = quoted ? '<div data-testid="quoteTweet" role="link"><a href="/quoted_author/status/900"><time>Quoted timestamp</time></a><button data-testid="caret" aria-label="Quoted post menu">Quote menu</button></div>' : '';
+        post.innerHTML = '<div class="post-content" style="display: flex !important">' + quote + '<div class="post-header"><div data-testid="User-Name"><a href="/' + author + '">@' + author + '</a><a href="/' + author + '/status/' + statusId + '"><time>Own timestamp</time></a></div><div class="post-actions"><div class="native-control-slot"><button id="native-grok-' + statusId + '" aria-label="Grok actions" data-testid="native-grok">' + svg + '</button></div><div class="native-control-slot"><button id="native-caret-' + statusId + '" data-testid="caret" aria-label="More">' + svg + '</button></div></div></div><p data-testid="tweetText">Synthetic post by @' + author + '. Never send a real account action.</p><button data-testid="reply">Reply</button></div>';
+        document.getElementById('posts').appendChild(post);
+      }
+      addPost('root-post', 'root_author', '100', true);
+      addPost('reply-post', 'reply_author', '101', true);
+      addPost('other-reply-post', 'other_author', '102');
+      const clearLayers = () => document.querySelectorAll('[role="dialog"], [role="menu"]').forEach(element => element.remove());
+      fixture.clearLayers = clearLayers;
+      fixture.tick = () => { document.getElementById('fixture-markers').textContent = 'mutation ' + ++fixture.mutations; };
+      fixture.recyclePost = (id, author, statusId) => {
+        const post = document.getElementById(id);
+        post.dataset.author = author; post.dataset.statusId = statusId;
+        const identity = post.querySelector('[data-testid="User-Name"]');
+        const authorLink = identity.querySelector('a:not([href*="/status/"])');
+        authorLink.href = '/' + author; authorLink.textContent = '@' + author;
+        identity.querySelector('a[href*="/status/"]').href = '/' + author + '/status/' + statusId;
+        post.querySelector('[data-testid="tweetText"]').textContent = 'Synthetic recycled post by @' + author + '.';
+        fixture.tick();
+      };
+      fixture.enterThread = () => { history.replaceState(null, '', '/root_author/status/100'); fixture.tick(); };
+      function dialog(title) {
+        const root = document.createElement('div'); root.setAttribute('role', 'dialog'); root.setAttribute('aria-labelledby', 'modal-header');
+        root.innerHTML = '<h2 id="modal-header">' + title + '</h2>';
+        document.body.appendChild(root); return root;
+      }
+      function action(root, text, handler, attrs = {}) {
+        const button = document.createElement('button'); button.type = 'button'; button.textContent = text;
+        Object.entries(attrs).forEach(([key, value]) => button.setAttribute(key, value));
+        button.addEventListener('click', handler); root.appendChild(button); return button;
+      }
+      function report(post) {
+        clearLayers();
+        const root = dialog('Why are you reporting this Post?');
+        const next = action(root, 'Next', () => {
+          clearLayers(); const confirmation = dialog('Report this Post');
+          action(confirmation, 'Report', () => {
+            fixture.reportRequests.push(post.dataset.statusId);
+            clearLayers(); const done = dialog('Thanks for your report');
+            action(done, 'Done', () => clearLayers());
+          });
+        });
+        next.disabled = true;
+        const close = action(root, 'Close', () => clearLayers(), { 'aria-label': 'Close' });
+        action(root, 'Spam', event => {
+          fixture.reportSelections.push('spam');
+          event.currentTarget.setAttribute('aria-checked', 'true'); next.disabled = false;
+          if (fixture.cancelReportAfterSpam) close.click();
+        }, { role: 'radio', 'aria-checked': 'false' });
+      }
+      function menu(post) {
+        clearLayers(); fixture.menuOpens.push(post.dataset.author);
+        const root = document.createElement('div'); root.setAttribute('role', 'menu'); document.body.appendChild(root);
+        if (fixture.reportAvailable) action(root, 'Report post', () => report(post), { role: 'menuitem' });
+        action(root, 'Block @' + post.dataset.author, () => {
+          clearLayers(); const expected = fixture.blockDialogHandle || post.dataset.author; const confirmation = dialog('Block @' + expected + '?');
+          action(confirmation, 'Block', () => { fixture.blockedAuthors.push(expected); clearLayers(); });
+          action(confirmation, 'Cancel', () => clearLayers());
+        }, { role: 'menuitem' });
+      }
+      fixture.openComposer = () => {
+        clearLayers(); fixture.modalOpens++;
+        const root = dialog('Create a Post'); root.id = 'synthetic-composer';
+        root.innerHTML += '<div contenteditable="true" role="textbox" data-testid="tweetTextarea_0"><div><div class="public-DraftStyleDefault-block"><span data-text="true">Modal </span><span><span data-text="true">@mention</span></span><span data-text="true"> stays together.</span></div><div class="public-DraftStyleDefault-block"><span data-text="true">Second line.</span></div><div class="public-DraftStyleDefault-block"><span><br data-text="true" /></span></div><div class="public-DraftStyleDefault-block"><span data-text="true">After blank line.</span></div></div></div><div contenteditable="true" role="textbox" data-testid="tweetTextarea_1"><div><div class="public-DraftStyleDefault-block"><span data-text="true">Second thread post.</span></div></div></div><div data-testid="toolBar"><button data-testid="tweetButton">Post</button></div>';
+        action(root, 'Close', () => clearLayers(), { 'aria-label': 'Close' }); return root;
+      };
+      fixture.openSchedule = () => {
+        const root = dialog('Schedule'); root.id = 'synthetic-schedule';
+        const native = action(root, 'Confirm', () => { fixture.nativePostActions++; }, { 'data-testid': 'scheduledConfirmationPrimaryAction' }); native.id = 'native-schedule-confirm';
+        return root;
+      };
+      document.addEventListener('click', event => {
+        const caret = event.target.closest('[data-testid="caret"]');
+        if (caret && !caret.closest('[data-testid="quoteTweet"]')) menu(caret.closest('[data-testid="tweet"]'));
+        const reply = event.target.closest('[data-testid="reply"]');
+        if (reply) fixture.openComposer();
+      });
+      document.addEventListener('keydown', event => { if (event.key === 'Escape') clearLayers(); });
+      document.getElementById('show-modal').addEventListener('click', fixture.openComposer);
+      document.getElementById('show-schedule').addEventListener('click', fixture.openSchedule);
+      document.getElementById('mutate-fixture').addEventListener('click', fixture.tick);
+      document.querySelector('[data-testid="tweetButtonInline"]').addEventListener('click', () => { fixture.nativePostActions++; });
+    </script>
+  </body>
+</html>

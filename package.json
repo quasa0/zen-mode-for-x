@@ -4,12 +4,15 @@
   "scripts": {
     "build": "node ./bundle-extension.js",
     "bundle": "node ./bundle-extension.js",
+    "package:extension": "node scripts/extension-dev/package.js",
     "bump-version": "node ./bump-version.js",
     "reload:chrome": "node ./reload-extension.js",
     "test:extension": "node scripts/extension-dev/index.js test",
+    "test:extension:package": "node scripts/extension-dev/package-test.js",
     "test:extension:profile": "node scripts/extension-dev/profile-test.js",
     "dev:extension": "node scripts/extension-dev/index.js dev",
     "inspect:extension": "node scripts/extension-dev/index.js inspect",
+    "audit:extension": "node scripts/extension-dev/index.js audit",
     "login:extension": "node scripts/extension-dev/index.js login"
   },
   "dependencies": {

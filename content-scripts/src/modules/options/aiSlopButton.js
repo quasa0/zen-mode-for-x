@@ -23,9 +23,25 @@ const CONFIRM_COLOR = "rgb(244, 33, 46)";
 const CONFIRMATION_WINDOW_MS = 3000;
 const confirmationTimeouts = new WeakMap();
 const confirmationStartTimes = new WeakMap();
+const confirmationIdentities = new WeakMap();
 const reportedTweetStatusIds = new Set();
+const reportedChildDisplays = new WeakMap();
+const buttonResetTimeouts = new Map();
+let aiSlopEnabled = false;
+let activeAction;
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const assertActionActive = (context) => {
+  if (context && (context.signal.aborted || !aiSlopEnabled || location.pathname !== context.pathname || getTweetStatusId(context.tweet) !== context.statusId)) {
+    throw new Error("AI Slop action canceled");
+  }
+};
+
+const sleep = (ms, context) => new Promise((resolve, reject) => {
+  if (context?.signal.aborted) { reject(new Error("AI Slop action canceled")); return; }
+  const cancel = () => { clearTimeout(timer); reject(new Error("AI Slop action canceled")); };
+  const timer = setTimeout(() => { context?.signal.removeEventListener("abort", cancel); resolve(); }, ms);
+  context?.signal.addEventListener("abort", cancel, { once: true });
+});
 
 const normalizeText = (text) => (text || "").replace(/\s+/g, " ").trim();
 
@@ -40,13 +56,14 @@ const isVisible = (element) => {
 
 const isActionable = (element) => isVisible(element) && !element.disabled && element.getAttribute("aria-disabled") !== "true";
 
-const waitFor = async (callback, timeout = 4000) => {
+const waitFor = async (callback, timeout = 4000, context) => {
   const start = Date.now();
 
   while (Date.now() - start < timeout) {
+    assertActionActive(context);
     const result = callback();
     if (result) return result;
-    await sleep(100);
+    await sleep(100, context);
   }
 
   throw new Error("Timed out waiting for X action dialog");
@@ -61,10 +78,11 @@ const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const findVisibleByText = (patterns, { root = document, selector = ACTION_SELECTOR, predicate = () => true } = {}) =>
   Array.from(root.querySelectorAll(selector)).find(
-    (element) => isActionable(element) && matchesAny(element.textContent || element.getAttribute("aria-label"), patterns) && predicate(element)
+    (element) => isActionable(element) && matchesAny(element.innerText || element.textContent || element.getAttribute("aria-label"), patterns) && predicate(element)
   );
 
-const clickVisibleByText = (patterns, options) => {
+const clickVisibleByText = (patterns, options, context) => {
+  assertActionActive(context);
   const element = findVisibleByText(patterns, options);
   if (!element) return false;
 
@@ -82,7 +100,8 @@ const getLatestMenu = () => {
   return menus[menus.length - 1];
 };
 
-const clickDialogAction = (patterns) => {
+const clickDialogAction = (patterns, context) => {
+  assertActionActive(context);
   const dialog = getLatestDialog();
   if (!dialog) return false;
 
@@ -123,15 +142,21 @@ const closeMenuIfPresent = () => {
 const isSelectedChoice = (element) =>
   element.getAttribute("aria-checked") === "true" || element.getAttribute("aria-selected") === "true" || Boolean(element.closest('[aria-checked="true"], [aria-selected="true"]'));
 
-const getTweetAuthorHandle = (tweet) => {
-  const statusLink = Array.from(tweet.querySelectorAll('a[href*="/status/"]')).find((link) => {
+const getTweetStatusLink = (tweet) => {
+  const links = Array.from(tweet.querySelectorAll('a[href*="/status/"]')).filter((link) => {
+    if (link.closest(selectors.tweet) !== tweet || link.parentElement.closest('[data-testid="quoteTweet"], div[role="link"]')) return false;
     try {
       const url = new URL(link.href);
-      return /^\/[^/]+\/status\/\d+/.test(url.pathname);
+      return url.origin === location.origin && /^\/[^/]+\/status\/\d+(?:\/|$)/.test(url.pathname);
     } catch {
       return false;
     }
   });
+  return links.find((link) => link.querySelector("time")) || links[0];
+};
+
+const getTweetAuthorHandle = (tweet) => {
+  const statusLink = getTweetStatusLink(tweet);
 
   if (!statusLink) return null;
 
@@ -147,13 +172,7 @@ const getStatusIdFromPathname = (pathname) => pathname.match(/^\/[^/]+\/status\/
 const getCurrentStatusId = () => getStatusIdFromPathname(window.location.pathname);
 
 const getTweetStatusId = (tweet) => {
-  const statusLink = Array.from(tweet.querySelectorAll('a[href*="/status/"]')).find((link) => {
-    try {
-      return getStatusIdFromPathname(new URL(link.href).pathname);
-    } catch {
-      return false;
-    }
-  });
+  const statusLink = getTweetStatusLink(tweet);
 
   if (!statusLink) return null;
 
@@ -164,22 +183,26 @@ const getTweetStatusId = (tweet) => {
   }
 };
 
-const getVisibleStatusTweets = () => Array.from(document.querySelectorAll(selectors.tweet)).filter((tweet) => isVisible(tweet) && getTweetStatusId(tweet));
-
-const isEligibleReplyTweet = (tweet) => {
-  if (!getCurrentStatusId() || !getTweetStatusId(tweet)) return false;
-
-  const rootTweet = getVisibleStatusTweets()[0];
-  return Boolean(rootTweet && tweet !== rootTweet);
+const isConfirmationForTweet = (button, tweet) => {
+  const identity = confirmationIdentities.get(button);
+  return Boolean(identity && identity.statusId === getTweetStatusId(tweet) && identity.authorHandle === getTweetAuthorHandle(tweet) && identity.pathname === location.pathname);
 };
 
-const openTweetMenu = async (tweet) => {
-  const caret = tweet.querySelector('[data-testid="caret"]');
+const isEligibleReplyTweet = (tweet) => {
+  const rootStatusId = getCurrentStatusId();
+  const statusId = getTweetStatusId(tweet);
+  return Boolean(rootStatusId && statusId && statusId !== rootStatusId && isVisible(tweet));
+};
+
+const openTweetMenu = async (tweet, context) => {
+  assertActionActive(context);
+  if (getLatestDialog() || getLatestMenu()) throw new Error("Close the current X dialog or menu before using AI Slop");
+  const caret = Array.from(tweet.querySelectorAll('[data-testid="caret"]')).find((button) => button.closest(selectors.tweet) === tweet && !button.closest('[data-testid="quoteTweet"], div[role="link"]'));
   if (!caret) throw new Error("Could not find X post menu button");
 
   caret.click();
 
-  return waitFor(getLatestMenu);
+  return waitFor(getLatestMenu, 4000, context);
 };
 
 const findTweetMenuItem = (menu, patterns) =>
@@ -188,86 +211,72 @@ const findTweetMenuItem = (menu, patterns) =>
     selector: '[role="menuitem"], [role="menuitemradio"], [role="button"]',
   });
 
-const clickTweetMenuItem = async (tweet, patterns) => {
-  const menu = await openTweetMenu(tweet);
-
-  const menuItem = findTweetMenuItem(menu, patterns);
-
-  if (!menuItem) {
-    closeMenuIfPresent();
-    throw new Error("Could not find X post menu action");
-  }
-
-  menuItem.click();
-};
-
-const completeSpamReport = async () => {
-  await waitFor(getLatestDialog, 6000);
+const completeSpamReport = async (context) => {
+  await waitFor(getLatestDialog, 6000, context);
 
   let selectedSpam = false;
-  let blockedAuthor = false;
-
+  let reportSubmitted = false;
   for (let step = 0; step < 10; step++) {
+    assertActionActive(context);
     const dialog = getLatestDialog();
-    if (!dialog && selectedSpam) return blockedAuthor;
     if (!dialog) {
-      await sleep(500);
-      continue;
+      if (reportSubmitted) return;
+      throw new Error("X spam report was closed before submission");
     }
 
-    if (clickDialogAction([/^block\b/i])) {
-      blockedAuthor = true;
-      await sleep(700);
-      continue;
+    if (reportSubmitted && clickDialogAction([/^done$/i], context)) {
+      await sleep(300, context);
+      return;
     }
 
-    if (clickDialogAction([/^done$/i])) {
-      await sleep(300);
-      return blockedAuthor;
+    if (!reportSubmitted) {
+      const action = clickDialogAction(selectedSpam ? [/^next$/i, /^continue$/i, /^submit$/i, /^report$/i] : [/^next$/i, /^continue$/i], context);
+      if (action) {
+        if (selectedSpam && /^(?:submit|report)$/i.test(action)) reportSubmitted = true;
+        await sleep(700, context);
+        continue;
+      }
+
+      if (
+        clickVisibleByText([/^spam\b/i, /^it['’]s spam\b/i, /^it is spam\b/i], {
+          root: dialog,
+          selector: ACTION_SELECTOR,
+          predicate: (element) => !isSelectedChoice(element),
+        }, context)
+      ) {
+        selectedSpam = true;
+        await sleep(500, context);
+        continue;
+      }
     }
 
-    if (clickDialogAction([/^next$/i, /^continue$/i, /^submit$/i, /^report$/i])) {
-      await sleep(700);
-      continue;
-    }
-
-    if (
-      clickVisibleByText([/\bspam\b/i], {
-        root: dialog,
-        selector: ACTION_SELECTOR,
-        predicate: (element) => !isSelectedChoice(element),
-      })
-    ) {
-      selectedSpam = true;
-      await sleep(500);
-      continue;
-    }
-
-    await sleep(500);
+    await sleep(500, context);
   }
 
   closeDialogIfPresent();
   throw new Error("Could not complete X spam report flow");
 };
 
-const reportTweetAsSpam = async (tweet) => {
-  const menu = await openTweetMenu(tweet);
+const reportTweetAsSpam = async (tweet, context) => {
+  const menu = await openTweetMenu(tweet, context);
   const reportItem = findTweetMenuItem(menu, [/^report post$/i, /^report tweet$/i, /^report$/i]);
 
   if (!reportItem) {
     closeMenuIfPresent();
-    return false;
+    throw new Error("Could not find X report menu action");
   }
 
+  assertActionActive(context);
   reportItem.click();
-  return completeSpamReport();
+  return completeSpamReport(context);
 };
 
-const blockTweetAuthor = async (tweet, authorHandle) => {
-  const blockPatterns = authorHandle ? [new RegExp(`^block\\s+@?${escapeRegExp(authorHandle)}$`, "i"), /^block\b/i] : [/^block\b/i];
-  const unblockPatterns = authorHandle ? [new RegExp(`^unblock\\s+@?${escapeRegExp(authorHandle)}$`, "i"), /^unblock\b/i] : [/^unblock\b/i];
+const blockTweetAuthor = async (tweet, authorHandle, context) => {
+  if (!authorHandle) throw new Error("Could not identify the X post author");
+  const blockPatterns = [new RegExp(`^block\\s+@?${escapeRegExp(authorHandle)}$`, "i")];
+  const unblockPatterns = [new RegExp(`^unblock\\s+@?${escapeRegExp(authorHandle)}$`, "i")];
 
-  const menu = await openTweetMenu(tweet);
+  const menu = await openTweetMenu(tweet, context);
   const unblockItem = findTweetMenuItem(menu, unblockPatterns);
 
   if (unblockItem) {
@@ -282,10 +291,12 @@ const blockTweetAuthor = async (tweet, authorHandle) => {
     throw new Error("Could not find X block menu action");
   }
 
+  assertActionActive(context);
   blockItem.click();
-  await waitFor(getLatestDialog, 5000);
+  const dialog = await waitFor(getLatestDialog, 5000, context);
+  if (!new RegExp(`@${escapeRegExp(authorHandle)}\\b`, "i").test(normalizeText(dialog.textContent))) throw new Error("X block confirmation does not identify the expected author");
 
-  if (!clickDialogAction([/^block$/i])) {
+  if (!clickDialogAction([/^block$/i], context)) {
     throw new Error("Could not confirm X block dialog");
   }
 };
@@ -301,6 +312,12 @@ const clearConfirmationTimeout = (button) => {
   if (timeout) clearTimeout(timeout);
   confirmationTimeouts.delete(button);
   confirmationStartTimes.delete(button);
+  confirmationIdentities.delete(button);
+};
+
+const clearButtonResetTimeout = (button) => {
+  clearTimeout(buttonResetTimeouts.get(button));
+  buttonResetTimeouts.delete(button);
 };
 
 const removeCountdownRing = (button) => {
@@ -334,9 +351,11 @@ const addCountdownRing = (button) => {
   syncCountdownRing(button);
 };
 
-const armAiSlopButton = (button, target) => {
+const armAiSlopButton = (button, target, tweet) => {
+  clearButtonResetTimeout(button);
   clearConfirmationTimeout(button);
   confirmationStartTimes.set(button, Date.now());
+  confirmationIdentities.set(button, { statusId: getTweetStatusId(tweet), authorHandle: getTweetAuthorHandle(tweet), pathname: location.pathname });
   setButtonState(button, "confirming", `Click again within 3 seconds to report this post as spam and block ${target}`);
   addCountdownRing(button);
 
@@ -356,16 +375,19 @@ const syncCountdownRing = (button) => {
   ring.style.animationDelay = `-${elapsed}ms`;
 };
 
-const revealReportedTweet = (tweet) => {
+const revealReportedTweet = (tweet, forget = true) => {
   const statusId = getTweetStatusId(tweet);
-  if (statusId) reportedTweetStatusIds.delete(statusId);
+  if (forget && statusId) reportedTweetStatusIds.delete(statusId);
 
   tweet.classList.remove(REPORTED_CLASS);
   tweet.querySelectorAll(`.${REPORTED_NOTICE_CLASS}`).forEach((notice) => notice.remove());
   Array.from(tweet.children).forEach((child) => {
     if (child.dataset.aiSlopReportedHidden !== "true") return;
 
-    child.style.removeProperty("display");
+    const previous = reportedChildDisplays.get(child);
+    if (previous?.value) child.style.setProperty("display", previous.value, previous.priority);
+    else child.style.removeProperty("display");
+    reportedChildDisplays.delete(child);
     delete child.dataset.aiSlopReportedHidden;
   });
 };
@@ -408,11 +430,12 @@ const collapseReportedTweet = (tweet) => {
     notice = createReportedNotice(tweet);
     tweet.appendChild(notice);
   }
+  notice.dataset.aiSlopStatusId = statusId || "";
 
   tweet.classList.add(REPORTED_CLASS);
   Array.from(tweet.children).forEach((child) => {
     if (child === notice) return;
-
+    if (child.dataset.aiSlopReportedHidden !== "true") reportedChildDisplays.set(child, { value: child.style.getPropertyValue("display"), priority: child.style.getPropertyPriority("display") });
     child.style.setProperty("display", "none", "important");
     child.dataset.aiSlopReportedHidden = "true";
   });
@@ -429,10 +452,10 @@ const getDirectChild = (ancestor, descendant) => {
 };
 
 const getTweetActionPlacement = (tweet) => {
-  const caret = tweet.querySelector('[data-testid="caret"]');
+  const caret = Array.from(tweet.querySelectorAll('[data-testid="caret"]')).find((button) => button.closest(selectors.tweet) === tweet && !button.closest('[data-testid="quoteTweet"], div[role="link"]'));
   if (!caret) return null;
 
-  const grokButton = tweet.querySelector('button[aria-label="Grok actions"]');
+  const grokButton = Array.from(tweet.querySelectorAll('button[aria-label="Grok actions"]')).find((button) => button.closest(selectors.tweet) === tweet && !button.closest('[data-testid="quoteTweet"], div[role="link"]'));
   let actionsContainer = null;
 
   if (grokButton) {
@@ -515,6 +538,9 @@ const createFallbackAiSlopControl = () => {
 const createAiSlopControl = (sourceSlot) => {
   const wrapper = sourceSlot ? sourceSlot.cloneNode(true) : createFallbackAiSlopControl();
   wrapper.classList.add(CONTROL_CLASS);
+  wrapper.removeAttribute("id");
+  wrapper.removeAttribute("data-testid");
+  wrapper.querySelectorAll("[id], [data-testid]").forEach((element) => { element.removeAttribute("id"); element.removeAttribute("data-testid"); });
 
   const button = wrapper.querySelector("button") || wrapper;
   button.classList.add(BUTTON_CLASS);
@@ -522,6 +548,9 @@ const createAiSlopControl = (sourceSlot) => {
   button.dataset.state = "idle";
   button.removeAttribute("aria-expanded");
   button.removeAttribute("aria-haspopup");
+  button.removeAttribute("aria-controls");
+  button.removeAttribute("aria-describedby");
+  button.removeAttribute("aria-labelledby");
   button.removeAttribute("data-testid");
   setButtonState(button, "idle", "AI slop");
   replaceButtonIcon(button);
@@ -537,36 +566,50 @@ const handleAiSlopClick = async (event) => {
 
   const button = event.currentTarget;
   const tweet = button.closest(selectors.tweet);
+  if (!aiSlopEnabled || !tweet || !isEligibleReplyTweet(tweet) || activeAction) return;
   const authorHandle = getTweetAuthorHandle(tweet);
+  if (!authorHandle) return;
   const target = authorHandle ? `@${authorHandle}` : "this account";
 
   if (button.dataset.state === "loading") return;
-  if (button.dataset.state !== "confirming") {
-    armAiSlopButton(button, target);
+  if (button.dataset.state !== "confirming" || !isConfirmationForTweet(button, tweet) || Date.now() - confirmationStartTimes.get(button) >= CONFIRMATION_WINDOW_MS) {
+    armAiSlopButton(button, target, tweet);
     return;
   }
 
+  const controller = new AbortController();
+  const context = { controller, signal: controller.signal, tweet, statusId: getTweetStatusId(tweet), pathname: location.pathname };
+  activeAction = context;
   try {
     clearConfirmationTimeout(button);
     removeCountdownRing(button);
     setButtonState(button, "loading", "working");
-    const blockedFromReportFlow = await reportTweetAsSpam(tweet);
-    await sleep(300);
-    if (!blockedFromReportFlow) await blockTweetAuthor(tweet, authorHandle);
+    await reportTweetAsSpam(tweet, context);
+    await sleep(300, context);
+    await blockTweetAuthor(tweet, authorHandle, context);
+    assertActionActive(context);
     setButtonState(button, "done", "blocked");
     collapseReportedTweet(tweet);
   } catch (error) {
-    console.warn("Minimal Twitter: AI Slop action failed", error);
-    setButtonState(button, "error", "failed");
+    if (!context.signal.aborted) {
+      console.warn("Minimal Twitter: AI Slop action failed", error);
+      setButtonState(button, "error", "failed");
+    }
   } finally {
-    setTimeout(() => resetAiSlopButton(button), 2500);
+    if (activeAction === context) activeAction = undefined;
+    if (!context.signal.aborted && button.isConnected) {
+      const timeout = setTimeout(() => { buttonResetTimeouts.delete(button); resetAiSlopButton(button); }, 2500);
+      buttonResetTimeouts.set(button, timeout);
+    }
   }
 };
 
 const addAiSlopButtonToTweet = (tweet) => {
   const statusId = getTweetStatusId(tweet);
 
-  if (tweet.querySelector(`:scope > .${REPORTED_NOTICE_CLASS}`) || (statusId && reportedTweetStatusIds.has(statusId))) {
+  const notice = tweet.querySelector(`:scope > .${REPORTED_NOTICE_CLASS}`);
+  if (notice && notice.dataset.aiSlopStatusId !== statusId) revealReportedTweet(tweet, false);
+  if (notice?.isConnected || (statusId && reportedTweetStatusIds.has(statusId))) {
     collapseReportedTweet(tweet);
     return;
   }
@@ -589,6 +632,9 @@ const addAiSlopButtonToTweet = (tweet) => {
 };
 
 const removeAiSlopButtons = () => {
+  activeAction?.controller.abort();
+  buttonResetTimeouts.forEach(clearTimeout);
+  buttonResetTimeouts.clear();
   document.querySelectorAll(`.${BUTTON_CLASS}`).forEach(clearConfirmationTimeout);
   document.querySelectorAll(`.${CONTROL_CLASS}`).forEach((control) => control.remove());
   reportedTweetStatusIds.clear();
@@ -601,10 +647,19 @@ const removeAiSlopButtons = () => {
 };
 
 const removeIneligibleAiSlopButtons = () => {
+  if (activeAction && (activeAction.pathname !== location.pathname || getTweetStatusId(activeAction.tweet) !== activeAction.statusId)) activeAction.controller.abort();
   document.querySelectorAll(`.${TWEET_CLASS}`).forEach((tweet) => {
-    if (isEligibleReplyTweet(tweet)) return;
+    if (isEligibleReplyTweet(tweet)) {
+      tweet.querySelectorAll(`.${BUTTON_CLASS}`).forEach((button) => {
+        if (button.dataset.state === "confirming" && !isConfirmationForTweet(button, tweet)) resetAiSlopButton(button);
+      });
+      return;
+    }
 
-    tweet.querySelectorAll(`.${CONTROL_CLASS}`).forEach((control) => control.remove());
+    tweet.querySelectorAll(`.${CONTROL_CLASS}`).forEach((control) => {
+      control.querySelectorAll(`.${BUTTON_CLASS}`).forEach((button) => { clearConfirmationTimeout(button); clearButtonResetTimeout(button); });
+      control.remove();
+    });
     tweet.classList.remove(TWEET_CLASS);
   });
 };
@@ -787,11 +842,13 @@ const addAiSlopStyles = () => {
 export const changeAiSlopButton = (aiSlopButton) => {
   switch (aiSlopButton) {
     case "off":
+      aiSlopEnabled = false;
       removeAiSlopButtons();
       removeStyles(STYLE_ID);
       break;
 
     case "on":
+      aiSlopEnabled = true;
       addAiSlopStyles();
       removeIneligibleAiSlopButtons();
       document.querySelectorAll(selectors.tweet).forEach(addAiSlopButtonToTweet);

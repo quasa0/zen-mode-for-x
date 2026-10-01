@@ -2,7 +2,8 @@ import addStyles, { removeStyles, stylesExist } from "../utilities/addStyles";
 
 const OVERLAY_CLASS = "mt-videoResolutionOverlay";
 const CONTAINER_CLASS = "mt-videoResolutionOverlay-container";
-const LISTENER_FLAG = "mtVideoResolutionOverlayListener";
+const videoListeners = new Map();
+const videoContainers = new WeakMap();
 
 let videoResolutionOverlayEnabled = false;
 
@@ -43,12 +44,14 @@ function getVideoContainer(video) {
 }
 
 function removeOverlay(video) {
-  const container = getVideoContainer(video);
+  const container = videoContainers.get(video) || getVideoContainer(video);
+  videoContainers.delete(video);
   container?.querySelector(`:scope > .${OVERLAY_CLASS}`)?.remove();
   container?.classList.remove(CONTAINER_CLASS);
 }
 
 function updateOverlay(video) {
+  if (videoContainers.get(video) && videoContainers.get(video) !== getVideoContainer(video)) removeOverlay(video);
   if (!videoResolutionOverlayEnabled) {
     removeOverlay(video);
     return;
@@ -65,6 +68,7 @@ function updateOverlay(video) {
   const container = getVideoContainer(video);
   if (!container) return;
 
+  videoContainers.set(video, container);
   container.classList.add(CONTAINER_CLASS);
 
   let overlay = container.querySelector(`:scope > .${OVERLAY_CLASS}`);
@@ -74,15 +78,22 @@ function updateOverlay(video) {
     container.appendChild(overlay);
   }
 
-  overlay.textContent = `${width}x${height} · ${getAspectRatio(width, height)}`;
+  const label = `${width}x${height} · ${getAspectRatio(width, height)}`;
+  if (overlay.textContent !== label) overlay.textContent = label;
 }
 
 function addVideoListeners(video) {
-  if (video.dataset[LISTENER_FLAG]) return;
+  if (videoListeners.has(video)) return;
+  const listener = () => updateOverlay(video);
+  videoListeners.set(video, listener);
+  video.addEventListener("loadedmetadata", listener);
+  video.addEventListener("resize", listener);
+}
 
-  video.dataset[LISTENER_FLAG] = "true";
-  video.addEventListener("loadedmetadata", () => updateOverlay(video));
-  video.addEventListener("resize", () => updateOverlay(video));
+function removeVideoListeners(video, listener) {
+  video.removeEventListener("loadedmetadata", listener);
+  video.removeEventListener("resize", listener);
+  videoListeners.delete(video);
 }
 
 function removeAllOverlays() {
@@ -94,6 +105,12 @@ export function changeVideoResolutionOverlay(setting) {
   if (setting !== "on" && setting !== "off") return;
 
   videoResolutionOverlayEnabled = setting === "on";
+  videoListeners.forEach((listener, video) => {
+    if (!videoResolutionOverlayEnabled || !video.isConnected) {
+      removeOverlay(video);
+      removeVideoListeners(video, listener);
+    }
+  });
 
   if (!videoResolutionOverlayEnabled) {
     removeStyles("videoResolutionOverlay");

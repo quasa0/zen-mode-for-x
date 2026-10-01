@@ -1,7 +1,7 @@
 import { css } from "@codemirror/lang-css";
 import CodeMirror from "@uiw/react-codemirror";
 import debounce from "lodash.debounce";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KeyCustomCss } from "../../../storage-keys";
 import { getStorage, setStorage } from "../../utilities/chromeStorage";
 import SectionLabel from "../ui/SectionLabel";
@@ -9,32 +9,43 @@ import SectionLabel from "../ui/SectionLabel";
 const AdvancedSection = () => {
   const [showEditor, setShowEditor] = useState(false);
   const [cssText, setCssText] = useState("");
+  const hasEdited = useRef(false);
 
-  const syncCss = debounce(async (css) => {
-    try {
-      await setStorage({ [KeyCustomCss]: css });
-    } catch (error) {
-      console.warn(error);
-    }
-  }, 1000);
+  const syncCss = useMemo(() => debounce(async (value) => {
+    try { await setStorage({ [KeyCustomCss]: value }); }
+    catch (error) { console.warn(error); }
+  }, 1000), []);
 
   const onChange = useCallback((value) => {
-    const newCss = (value || "").trim();
+    const newCss = value || "";
+    hasEdited.current = true;
+    setCssText(newCss);
     syncCss(newCss);
-  }, []);
+  }, [syncCss]);
 
   useEffect(() => {
+    let active = true;
     const setInitialSavedCss = async () => {
       try {
         const customCss = await getStorage(KeyCustomCss);
-        customCss && setCssText(customCss);
+        if (active && !hasEdited.current) setCssText(customCss || "");
       } catch (error) {
         console.warn(error);
       }
     };
 
+    const flushCss = () => syncCss.flush();
+    window.addEventListener("pagehide", flushCss);
+    window.addEventListener("beforeunload", flushCss);
     setInitialSavedCss();
-  }, []);
+    return () => {
+      active = false;
+      syncCss.flush();
+      syncCss.cancel();
+      window.removeEventListener("pagehide", flushCss);
+      window.removeEventListener("beforeunload", flushCss);
+    };
+  }, [syncCss]);
 
   return (
     <section className="flex flex-col gap-y-2">
@@ -50,7 +61,7 @@ const AdvancedSection = () => {
         ) : (
           <>
             <span> · </span>
-            <button onClick={() => setShowEditor(false)} className="text-x-premium">
+            <button onClick={() => { syncCss.flush(); setShowEditor(false); }} className="text-x-premium">
               Hide CSS Editor
             </button>
           </>

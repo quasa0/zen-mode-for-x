@@ -3,7 +3,7 @@ import selectors from "../../selectors";
 import svgAssets from "../svgAssets";
 import addStyles, { removeStyles } from "../utilities/addStyles";
 import { createTypefullyUrl } from "../utilities/createTypefullyUrl";
-import { addSidebarButton } from "../utilities/sidebar";
+import { addSidebarButton, getSidebarScreenName } from "../utilities/sidebar";
 import { getStorage, setStorage } from "../utilities/storage";
 
 // Utilities
@@ -15,7 +15,7 @@ export const changeSidebarSetting = (sidebarSelector, state, onAdd) => {
       addStyles(
         sidebarSelector,
         `${selectors.sidebarLinks[sidebarSelector]} {
-          display: none;
+          display: none !important;
         }`,
       );
       break;
@@ -76,49 +76,42 @@ export const addZenWriterModeButton = (writerMode) => {
 };
 
 export const updateZenWriterModeButtonState = async (writerMode) => {
-  const button = document.querySelector('nav[role="navigation"] > [aria-label="Zen Writer Mode"]');
+  const button = document.querySelector(`${selectors.leftSidebarLinks} > .mt-sidebar-button[aria-label="Zen Writer Mode"]`);
 
   if (!button) return;
 
   const state = writerMode ?? (await getStorage(KeyWriterMode));
   button.classList.add("mt-zen-writer-mode-button");
   button.classList.toggle("mt-zen-writer-mode-button-active", state === "on");
+  button.setAttribute("aria-pressed", String(state === "on"));
 };
 
-let tm1;
 export const addXPremiumButton = () => {
-  clearTimeout(tm1);
-  tm1 = setTimeout(() => {
-    addSidebarButton({
-      name: "Premium",
-      href: "/settings/premium",
-      svgAsset: svgAssets.xPremium.normal,
-    });
-  }, 100);
+  addSidebarButton({
+    name: "Premium",
+    href: "/settings/premium",
+    svgAsset: svgAssets.xPremium.normal,
+    nativeSelector: selectors.sidebarLinks.xPremium,
+  });
 };
 
-let tm2;
 export const addAnalyticsButton = () => {
-  clearTimeout(tm2);
-  tm2 = setTimeout(() => {
-    addSidebarButton({
-      name: "Analytics",
-      svgAsset: svgAssets.grow.normal,
-      onClick: () => {
-        const screenName = document.querySelector(`a[role="link"][data-testid="AppTabBar_Profile_Link"]`)?.getAttribute("href").replace("/", "");
-
-        const url = createTypefullyUrl(
-          {
-            utm_content: "sidebar-grow-button",
-            "mt-screen-name": screenName,
-          },
-          "grow",
-        );
-
-        if (screenName) window.open(url, "_blank");
-      },
-    });
-  }, 200);
+  addSidebarButton({
+    name: "Analytics",
+    svgAsset: svgAssets.grow.normal,
+    onClick: () => {
+      const screenName = getSidebarScreenName();
+      if (!screenName) return;
+      const url = createTypefullyUrl(
+        {
+          utm_content: "sidebar-grow-button",
+          "mt-screen-name": screenName,
+        },
+        "grow",
+      );
+      window.open(url, "_blank", "noopener");
+    },
+  });
 };
 
 export const addTopicsButton = () => {
@@ -202,7 +195,7 @@ const addStyleToShowLabelsOnHover = () => {
 };
 
 export const changeNavigationButtonsLabels = async (setting) => {
-  const isMessagesPage = window.location.pathname.startsWith("/messages");
+  const isMessagesPage = window.location.pathname.startsWith("/messages") || window.location.pathname.startsWith("/i/chat");
   const isSearchPage = window.location.pathname.startsWith("/search");
 
   if (isMessagesPage || isSearchPage) {
@@ -230,6 +223,7 @@ align-items: flex-start;
   switch (setting) {
     case "never":
       addStyleToRemoveLabels();
+      removeStyles("hideLabels");
       removeStyles("showLabelsOnHover");
 
       break;
@@ -254,8 +248,8 @@ export const changeNavigationCenter = (navigationCenter) => {
         "navigationCenter",
         `
         ${selectors.leftSidebar} > div > div > div {
-          justify-content: center;
-          padding-top: 0;
+          justify-content: center !important;
+          padding-top: 0 !important;
         }
         `,
       );

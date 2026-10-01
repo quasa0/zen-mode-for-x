@@ -27,7 +27,6 @@ export const KeyProfileButton = "profileButton";
 export const KeyNavigationButtonsLabels = "navigationButtonsLabels";
 export const KeyNavigationCenter = "navigationCenter";
 export const KeyUnreadCountBadge = "unreadCountBadge";
-export const KeyAllVanity = "allVanity";
 export const KeyReplyCount = "replyCount";
 export const KeyRetweetCount = "retweetCount";
 export const KeyLikeCount = "likeCount";
@@ -36,6 +35,11 @@ export const KeyTweetButton = "tweetButton";
 export const KeySearchBar = "searchBar";
 export const KeyTransparentSearch = "transparentSearch";
 export const KeyRemovePromotedPosts = "removePromotedPosts";
+export const KeyRemovePaidPartnershipPosts = "removePaidPartnershipPosts";
+export const KeyRemoveAiPosts = "removeAiPosts";
+export const KeyMindfulScrolling = "mindfulScrolling";
+export const KeyScrollLimitMinutes = "scrollLimitMinutes";
+export const KeyScrollReminderIntensity = "scrollReminderIntensity";
 export const KeyRemoveTopicsToFollow = "removeTopicsToFollow";
 export const KeyRecentMedia = "recentMedia";
 export const KeyTypefullyEnhancementsButtons = "typefullyEnhancementsButtons";
@@ -63,6 +67,11 @@ export const allSettingsKeys = [
   KeyRecentMedia,
   KeyTrendsHomeTimeline,
   KeyRemovePromotedPosts,
+  KeyRemovePaidPartnershipPosts,
+  KeyRemoveAiPosts,
+  KeyMindfulScrolling,
+  KeyScrollLimitMinutes,
+  KeyScrollReminderIntensity,
   KeyRemoveTopicsToFollow,
   KeyRemoveTimelineTabs,
   KeyAiSlopButton,
@@ -107,8 +116,6 @@ export const allSettingsKeys = [
   // Advanced Features
   KeyCustomCss,
 
-  // Legacy/Unused
-  KeyAllVanity,
 ];
 
 export const defaultPreferences = {
@@ -127,6 +134,11 @@ export const defaultPreferences = {
   [KeyRecentMedia]: "off",
   [KeyTrendsHomeTimeline]: "off",
   [KeyRemovePromotedPosts]: "on",
+  [KeyRemovePaidPartnershipPosts]: "off",
+  [KeyRemoveAiPosts]: "off",
+  [KeyMindfulScrolling]: "off",
+  [KeyScrollLimitMinutes]: 10,
+  [KeyScrollReminderIntensity]: "gentle",
   [KeyRemoveTopicsToFollow]: "on",
   [KeyRemoveTimelineTabs]: "off",
   [KeyAiSlopButton]: "on",

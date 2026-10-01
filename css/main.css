@@ -4,15 +4,9 @@
 - Copyright (c) 2022 Mailbrew Inc.
 --*/
 
-/* Remove Promoted Posts */
-/* Keep article combinator or it will remove all videos as well */
-[data-testid="placementTracking"] article,
-a[href*="quick_promote_web"] {
-  display: none;
-}
-
 /* Hide Messages Drawer */
-[data-testid="DMDrawer"] {
+[data-testid="DMDrawer"],
+[data-testid="chat-drawer-root"] {
   visibility: hidden;
 }
 

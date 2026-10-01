@@ -1,84 +1,32 @@
-export default function isMutationSkippable(mutationsList) {
-  const a = mutationsList[0]?.addedNodes[0]; // First added node
-  const r = mutationsList[0]?.removedNodes[0]; // First removed node
-  const t = mutationsList[0]?.target; // Target
-  const el = a || r; // Element
+const OWNED_UI = '[id^="mt-"], [id^="typefully-"], .mt-tooltip, .mt-videoResolutionOverlay, .mt-sidebar-button, .mt-writer-mode-composer-button';
+const COUNTS = '[data-testid="like"], [data-testid="unlike"], [data-testid="retweet"], [data-testid="unretweet"], [data-testid="reply"]';
 
-  try {
-    // Minimal Twitter injected elements
-    if (
-      el?.id?.startsWith("mt-") ||
-      t?.id?.startsWith("mt-") ||
-      el?.id?.startsWith("typefully-") ||
-      t?.className?.startsWith("mt-") // For example .mt-tooltip ends up here
-    )
-      return true;
+const asElement = (node) => node?.nodeType === 1 ? node : node?.parentElement;
+const hasVideo = (node) => node?.nodeType === 1 && (node.matches("video") || !!node.querySelector("video"));
 
-    // Engagement counts
-    if (t.closest(`[data-testid="like"]`) || t.closest(`[data-testid="retweet"]` || t.closest(`[data-testid="reply"]`))) {
-      return true;
+function canSkipRecord(mutation) {
+  const target = asElement(mutation.target);
+  const nodes = [...mutation.addedNodes, ...mutation.removedNodes];
+  if (target?.closest("head") || target?.closest(OWNED_UI)) return true;
+  // Media can mount under a videoPlayer that already exists. It needs metadata listeners.
+  if (nodes.some(hasVideo)) return false;
+  if (target?.closest(COUNTS)) return true;
+  if (target?.closest('[data-testid="tweetText"], [data-testid^="tweetTextarea_"][role="textbox"]')) return true;
+  if (!nodes.length) return false;
+  return nodes.every((node) => {
+    const element = asElement(node);
+    if (element?.closest(OWNED_UI)) return true;
+    // Profile photos can load after their tweetPhoto container was inserted.
+    if (element?.matches("img") && (element.closest('[data-testid="tweetPhoto"]') || target?.closest('[data-testid="tweetPhoto"]'))) return false;
+    if (node.nodeType !== 1) {
+      // Draft text does not change the composer controls. Other text can identify ads or suggestions.
+      return !!target?.closest('[data-testid^="tweetTextarea_"][role="textbox"]');
     }
+    return ["IMG", "SCRIPT", "STYLE", "path"].includes(node.nodeName);
+  });
+}
 
-    // Inside the sidebar
-    if (t.closest(`nav[role="navigation"]`)) return true;
-
-    // Sidebar itself
-    if (t?.nodeName === "NAV" && t?.getAttribute("role") === "navigation") return true;
-
-    // <head> changes
-    if (t.closest("head")) return true;
-
-    // User Avatar changes
-    if (el?.closest("[data-testid^='UserAvatar-Container']") || t?.closest("[data-testid^='UserAvatar-Container']")) return true;
-
-    // Post media
-    if (el?.closest("[data-testid='tweetPhoto']")) return true;
-
-    // Images and videos
-    if (
-      el?.nodeName === "IMG" ||
-      t?.nodeName === "IMG" ||
-      el?.nodeName === "VIDEO" ||
-      el?.firstChild?.nodeName === "VIDEO" ||
-      el?.querySelector(":scope > img") ||
-      el?.getAttribute("data-testid") === "tweetPhoto" ||
-      el?.parentNode?.getAttribute("data-testid") === "tweetPhoto" ||
-      t?.closest("[data-testid='videoPlayer']")
-    ) {
-      return true;
-    }
-
-    // Links previews (inside a data-testid="card.wrapper")
-    if (el.closest("[data-testid='card.wrapper']")) {
-      return true;
-    }
-
-    // Added or removed scripts
-    if (el?.nodeName === "SCRIPT") return true;
-
-    // Added or removed styles
-    if (el?.nodeName === "STYLE") return true;
-
-    // DM drawer
-    if (el?.closest("[data-testid='DMDrawer']") || t?.closest("[data-testid='DMDrawer']")) return true;
-
-    // Trends drawer
-    if (el?.closest("[data-testid='sidebarColumn']") || t?.closest("[data-testid='sidebarColumn']")) return true;
-
-    // Ignore text only nodes
-    if (el?.nodeName === "#text") return true;
-
-    // Ignore info button on tweets
-    // it's a > div > div > div[data-testid="caret"]
-    if (el?.nodeName === "DIV" && el?.firstChild?.firstChild?.firstChild?.getAttribute("data-testid") === "caret") {
-      return true;
-    }
-
-    // SVG changes
-    if (el?.nodeName === "path") return true;
-
-    return false;
-  } catch (e) {}
-
-  return false;
+export default function isMutationSkippable(mutations) {
+  // Every record and every changed node must be irrelevant before skipping a batch.
+  return mutations.length > 0 && Array.from(mutations).every(canSkipRecord);
 }

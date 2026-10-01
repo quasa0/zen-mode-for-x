@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Timeline feature audit / X</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: rgb(15,20,25); background: white; font: 16px system-ui; }
+    main { display: flex; min-height: 100vh; }
+    [data-testid=primaryColumn] { width: 600px; max-width: 600px; border: 1px solid #ddd; }
+    [data-testid=sidebarColumn] { width: 300px; padding: 16px; }
+    header[role=banner] { width: 80px; flex-shrink: 0; }
+    #home-header { position: sticky; top: 0; background: white; z-index: 1; }
+    nav [role=tablist] { display: flex; }
+    [role=tab], button, [role=button] { padding: 8px; cursor: pointer; }
+    article, #inline-composer, #profile-header, #unrelated-content { padding: 16px; border-bottom: 1px solid #ddd; }
+    [role=textbox] { min-height: 48px; outline: 1px solid #aaa; }
+    [data-testid=toolBar], [role=group] { display: flex; justify-content: space-between; align-items: center; }
+    svg { width: 20px; height: 20px; }
+    video { width: 100%; min-height: 160px; background: #eee; }
+    #fixture-timeline article { min-height: 160px; }
+    #fixture-modal { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); background: white; width: 600px; border: 1px solid #aaa; z-index: 100; }
+    #fixture-modal > div { padding: 16px; }
+    #profile-header a { display: inline-block; padding: 8px; }
+    #profile-photo-posts [data-testid=tweetPhoto] img { width: 160px; height: 100px; object-fit: cover; }
+  </style>
+</head>
+<body>
+<header role="banner"><div style="padding-top: 64px"><div><nav role="navigation"><a id="fixture-home" data-testid="AppTabBar_Home_Link" role="link" href="/home" aria-label="Home"><svg></svg><span>Home</span></a><a id="fixture-explore" data-testid="AppTabBar_Explore_Link" role="link" href="/explore" aria-label="Explore"><svg></svg><span>Explore</span></a><button id="fixture-zen-shortcut" type="button" aria-label="Zen Writer Mode"><div><div><svg></svg></div><div><span>Zen Writer Mode</span></div></div></button></nav><button id="fixture-header-marketing" type="button">Header promotion</button></div></div></header>
+<main role="main">
+<div data-testid="primaryColumn"><div>
+  <div id="home-header"><h2>Home</h2><nav id="home-nav" role="navigation"><div><div data-testid="ScrollSnap-List" role="tablist">
+    <div role="presentation"><div id="home-for-you" role="tab" aria-selected="true"><div dir="ltr"><span>For you</span></div></div></div>
+    <div role="presentation"><div id="home-following" role="tab" aria-selected="false"><div dir="ltr"><span>Following</span></div></div></div>
+  </div></div></nav></div>
+  <div id="profile-header"><h2 data-testid="UserName">Profile preview</h2>
+    <a id="following-count" href="/fixture/following" dir="ltr" role="link"><span id="following-number">42</span><span id="following-label">Following</span></a>
+    <a id="followers-count" href="/fixture/verified_followers" dir="ltr" role="link"><span id="followers-number">93</span><span id="followers-label">Followers</span></a>
+    <a id="followers-navigation" href="/fixture/followers" role="link"><span>View all followers</span></a>
+  </div>
+  <section id="topic-suggestions" aria-labelledby="accessible-list-topics"><h2 id="accessible-list-topics">Topics to follow</h2><div id="topic-carousel" aria-label="Topics Carousel">Suggested topics</div><a id="topic-picker" href="/i/topics/picker/home">Browse topics</a></section>
+  <div aria-label="Lists timeline"><section aria-labelledby="accessible-list-list"><h2 id="accessible-list-list">List members</h2><div id="list-carousel" aria-label="Members Carousel"><div data-testid="UserCell">List member must remain</div></div></section></div>
+  <div id="unrelated-content">Unrelated content must retain its size and visibility.<div id="unrelated-separator" role="separator">Unrelated separator</div></div>
+  <section id="fixture-timeline" aria-labelledby="accessible-list-home">
+    <h2 id="accessible-list-home">Your Home timeline</h2>
+    <article id="count-post" data-testid="tweet" role="article">
+      <div data-testid="User-Name"><a role="link" href="/fixture/status/123"><time>now</time></a></div>
+      <p>Organic post with separate engagement actions.</p>
+      <div><div role="group" id="id__engagement">
+        <div id="reply-action"><button data-testid="reply"><svg></svg><span id="reply-number">7</span></button></div>
+        <div id="repost-action"><button data-testid="retweet"><svg></svg><span id="repost-number">8</span></button></div>
+        <div id="like-action"><button data-testid="like"><svg></svg><span id="like-number">9</span></button></div>
+        <div id="view-action" style="display: grid"><a role="link" href="/fixture/status/123/analytics"><svg></svg><span>100</span></a></div>
+        <div id="bookmark-action"><button data-testid="bookmark">Bookmark</button></div>
+        <div><button id="post-grok" aria-label="Ask Grok"><svg id="fixture-grok-icon"><path d="M12.745 20.54l10.97-8.19c.539-.4 1.307-.244 1.564.38 1.349 3.288.746 7.241-1.938 9.955-2.683 2.714-6.417 3.31-9.83 1.954l-3.728 1.745c5.347 3.697 11.84 2.782 15.898-1.324 3.219-3.255 4.216-7.692 3.284-11.693l.008.009c-1.351-5.878.332-8.227 3.782-13.031L33 0l-4.54 4.59v-.014L12.743 20.544m-2.263 1.987c-3.837-3.707-3.175-9.446.1-12.755 2.42-2.449 6.388-3.448 9.852-1.979l3.72-1.737c-.67-.49-1.53-1.017-2.515-1.387-4.455-1.854-9.789-.931-13.41 2.728-3.483 3.523-4.579 8.94-2.697 13.561 1.405 3.454-.899 5.898-3.22 8.364C1.49 30.2.666 31.074 0 32l10.478-9.466"></path></svg></button></div>
+      </div></div>
+    </article>
+    <div><div><div><div id="tweet-separator" role="separator">Tweet separator</div></div></div></div>
+    <div id="video-mount" data-testid="videoPlayer"></div>
+    <div id="recommendations-mount"></div>
+    <div id="profile-photo-posts"></div>
+  </section>
+  <div id="inline-composer">
+    <div data-testid="tweetTextarea_0" role="textbox" contenteditable="true" aria-label="Post text"><div class="public-DraftStyleDefault-block">Inline draft</div></div>
+    <div data-testid="toolBar" id="inline-toolbar">
+      <nav id="composer-nav" role="navigation"><div><div data-testid="ScrollSnap-List" role="tablist"><div role="presentation"><button id="media-button" data-testid="fileInputButton">Media</button></div><div role="presentation"><div id="composer-option" role="button">Schedule</div></div></div></div></nav>
+      <button data-testid="tweetButtonInline" id="inline-post">Post</button>
+    </div>
+  </div>
+</div></div>
+<aside data-testid="sidebarColumn"><aside id="profile-suggestions" role="complementary" aria-label="Who to follow" style="visibility: visible"><h2>Who to follow</h2><ul role="list"><li data-testid="UserCell">Suggested account</li></ul></aside><section aria-labelledby="accessible-list-trends"><h2 id="accessible-list-trends">Trends</h2></section></aside>
+</main>
+<div id="drawer-mount"><div data-testid="GrokDrawer" id="grok-drawer"><button data-testid="GrokDrawerHeader" aria-label="Grok">Grok</button></div></div>
+<script>
+  window.fixture = { followingClicks: 0, composerClicks: 0, modalEscapes: 0 };
+  const selectHome = (tab) => {
+    document.querySelectorAll('#home-nav [role=tab]').forEach((item) => item.setAttribute('aria-selected', String(item === tab)));
+  };
+  document.getElementById('home-following').addEventListener('click', (event) => { fixture.followingClicks++; selectHome(event.currentTarget); });
+  document.getElementById('home-for-you').addEventListener('click', (event) => selectHome(event.currentTarget));
+  document.getElementById('composer-option').addEventListener('click', () => fixture.composerClicks++);
+  fixture.mutate = () => document.getElementById('unrelated-content').appendChild(document.createElement('i'));
+  fixture.route = (path) => { history.pushState({}, '', path); fixture.mutate(); };
+  fixture.addPhoto = (handle, status, index = 1, alt = 'Native photo') => {
+    const post = document.createElement('article'); post.dataset.testid = 'tweet';
+    post.id = `photo-post-${status}-${index}`;
+    const anchor = document.createElement('a'); anchor.href = `/${handle}/status/${status}/photo/${index}`;
+    const photo = document.createElement('div'); photo.dataset.testid = 'tweetPhoto';
+    const image = document.createElement('img'); image.alt = alt;
+    image.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="100"><rect width="160" height="100" fill="#77a"/></svg>');
+    photo.appendChild(image); anchor.appendChild(photo); post.appendChild(anchor);
+    document.getElementById('profile-photo-posts').appendChild(post);
+  };
+  fixture.openModal = () => {
+    if (document.getElementById('fixture-modal')) return;
+    const modal = document.createElement('div');
+    modal.id = 'fixture-modal'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-labelledby', 'modal-header');
+    modal.innerHTML = '<div><h2 id="modal-header">Compose</h2><button id="modal-close">Close</button><article id="modal-quote" role="article" data-testid="tweet">Referenced post must remain visible</article><div id="modal-composer"><div data-testid="tweetTextarea_0" role="textbox" contenteditable="true"><div class="public-DraftStyleDefault-block">Modal draft</div></div><div data-testid="toolBar" id="modal-toolbar"><nav role="navigation"><div data-testid="ScrollSnap-List" role="tablist"><div role="presentation"><button id="modal-media">Media</button></div></div></nav><button data-testid="tweetButton" id="modal-post">Post</button></div></div></div>';
+    modal.querySelector('#modal-close').addEventListener('click', () => modal.remove());
+    document.body.appendChild(modal);
+  };
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && document.getElementById('fixture-modal')) fixture.modalEscapes++; });
+  fixture.openGrok = () => {
+    const drawer = document.querySelector('[data-testid=GrokDrawer]');
+    if (!drawer) return;
+    drawer.innerHTML = '<div data-testid="GrokDrawerHeader"><h2>Ask Grok</h2><button>Close</button></div><p>Opened by a deliberate post action</p>';
+  };
+  fixture.closeGrok = () => { document.querySelector('[data-testid=GrokDrawer]').innerHTML = '<button data-testid="GrokDrawerHeader">Grok</button>'; };
+  fixture.insertVideo = async () => {
+    const canvas = document.createElement('canvas'); canvas.width = 320; canvas.height = 180;
+    const context = canvas.getContext('2d'); context.fillStyle = '#888'; context.fillRect(0, 0, 320, 180);
+    const stream = canvas.captureStream(10);
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
+    const chunks = [];
+    recorder.ondataavailable = (event) => chunks.push(event.data);
+    const recorded = new Promise((resolve) => { recorder.onstop = resolve; });
+    recorder.start();
+    await new Promise((resolve) => setTimeout(resolve, 220));
+    recorder.stop(); await recorded; stream.getTracks().forEach((track) => track.stop());
+    const video = document.createElement('video'); video.id = 'late-video'; video.controls = true;
+    video.src = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' }));
+    const metadata = new Promise((resolve, reject) => { video.addEventListener('loadedmetadata', resolve, { once: true }); video.addEventListener('error', () => reject(new Error('Fixture video failed to load')), { once: true }); });
+    // The first record is a reply count; a later node in the batch is the video.
+    document.getElementById('reply-number').appendChild(document.createTextNode(''));
+    const mount = document.getElementById('video-mount'); mount.append(document.createElement('img'), video);
+    video.load(); await metadata;
+  };
+</script>
+</body>
+</html>

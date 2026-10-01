@@ -1,4 +1,3 @@
-import throttle from "lodash.throttle";
 import { defaultPreferences } from "../../storage-keys";
 
 /*--
@@ -41,19 +40,12 @@ const getMultipleStorageKeys = (keysArray) => {
   });
 };
 
-/*--
-- Set storage with storage.local
-- kv => {key: value} (Single key value pair)
-- Throttle function to prevent hitting API limits
-- The maximum number of set, remove, or clear operations = 120
-  - 1 min = 60000 ms
-  - 60000 ms / 120 operations = 500 ms/operation
---*/
-export const setStorage = throttle(async (kv) => {
-  const promise = new Promise((resolve, _reject) => {
-    chrome?.storage?.local.set(kv, () => {
-      return resolve(kv);
-    });
+// storage.local has no sync-area write-rate limit. Save each change so rapid
+// clicks on different controls cannot replace a pending write for another key.
+export const setStorage = (kv) => new Promise((resolve, reject) => {
+  chrome.storage.local.set(kv, () => {
+    const error = chrome.runtime.lastError;
+    if (error) reject(new Error(error.message));
+    else resolve(kv);
   });
-  return promise;
-}, 500);
+});

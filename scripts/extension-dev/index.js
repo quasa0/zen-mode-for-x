@@ -8,7 +8,7 @@ import { Browser } from "./browser.js";
 import { build, bundlePath, cache, root } from "./build.js";
 import { HomeFeedComparison } from "./feed-comparison.js";
 import { writeComparison } from "./comparison.js";
-import { allSettingsKeys } from "../../storage-keys.js";
+import { allSettingsKeys, defaultPreferences } from "../../storage-keys.js";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -21,16 +21,19 @@ const { values, positionals } = parseArgs({
     fixture: { type: "boolean" },
     settings: { type: "string" },
     "eval-file": { type: "string" },
+    suite: { type: "string", default: "all" },
+    steps: { type: "string", default: "48" },
     help: { type: "boolean" },
   },
 });
 const command = positionals[0] || "test";
 values.url ??= command === "login" ? "https://x.com/i/flow/login" : "https://x.com/home";
 if (values.help) {
-  console.log("Usage: node scripts/extension-dev/index.js <test|dev|inspect|login> [--browser helium|chrome] [--url https://x.com/...] [--headless|--headed] [--fixture] [--force] [--settings file.json] [--eval-file file.js]");
+  console.log("Usage: node scripts/extension-dev/index.js <test|dev|inspect|audit|login> [--browser helium|chrome] [--url https://x.com/...] [--headless|--headed] [--fixture] [--force] [--settings file.json] [--eval-file file.js] [--suite all|smoke|filters,navigation,timeline,interface,mindful,theme,settings (test) or all|focus|media|labels (audit)] [--steps 12..120]");
   process.exit(0);
 }
-if (!["test", "dev", "inspect", "login"].includes(command)) throw new Error(`Unknown command: ${command}`);
+if (!["test", "dev", "inspect", "audit", "login"].includes(command)) throw new Error(`Unknown command: ${command}`);
+if (!Number.isInteger(Number(values.steps)) || Number(values.steps) < 12 || Number(values.steps) > 120) throw new Error("Steps must be an integer from 12 to 120");
 if (!["helium", "chrome"].includes(values.browser)) throw new Error(`Unknown browser: ${values.browser}`);
 if (new URL(values.url).origin !== "https://x.com") throw new Error("Live inspection URLs must use https://x.com");
 if (command === "login" && values.headless) throw new Error("Login requires a visible browser window. Remove --headless.");
@@ -42,7 +45,7 @@ const artifacts = join(cache, "artifacts", `${new Date().toISOString().replace(/
 const lockPath = join(cache, "session.lock");
 const abort = new AbortController();
 const stopped = new Promise((resolve) => {
-  const stop = () => { stopping = true; abort.abort(); if (command === "test" || command === "inspect") process.exitCode = 130; resolve(); };
+  const stop = () => { stopping = true; abort.abort(); if (["test", "inspect", "audit"].includes(command)) process.exitCode = 130; resolve(); };
   process.once("SIGINT", stop);
   process.once("SIGTERM", stop);
 });
@@ -63,6 +66,7 @@ async function acquireLock() {
 }
 
 async function storage(data) {
+  assert.ok(Object.keys(data).every((key) => allSettingsKeys.includes(key)), "Storage writes must use registered settings");
   await popup.send("Extensions.setStorageItems", { id: browser.extensionId, storageArea: "local", values: data });
 }
 
@@ -114,12 +118,12 @@ function authenticationError(state, failure) {
   return error;
 }
 
-async function waitForInspectionReady() {
+async function waitForInspectionReady(url = values.url) {
   if (values.fixture) {
     await page.wait("!!document.querySelector('[data-testid=primaryColumn]')", 30000);
     return;
   }
-  const requiresHomeFeed = new URL(values.url).pathname === "/home";
+  const requiresHomeFeed = new URL(url).pathname === "/home";
   const deadline = Date.now() + 30000;
   let state;
   while (Date.now() < deadline) {
@@ -160,17 +164,27 @@ async function reload(info) {
 }
 
 async function useFixture(target) {
-  const html = await readFile(join(root, "scripts/extension-dev/fixtures/timeline.html"));
+  target.fixtureContent = await readFile(join(root, "scripts/extension-dev/fixtures/timeline.html"));
   const listener = (event) => {
     if (event.sessionId !== target.sessionId || event.method !== "Fetch.requestPaused") return;
     const { requestId, resourceType } = event.params;
     const response = resourceType === "Document"
-      ? target.send("Fetch.fulfillRequest", { requestId, responseCode: 200, responseHeaders: [{ name: "Content-Type", value: "text/html; charset=utf-8" }], body: html.toString("base64") })
+      ? target.send("Fetch.fulfillRequest", { requestId, responseCode: 200, responseHeaders: [{ name: "Content-Type", value: "text/html; charset=utf-8" }], body: target.fixtureContent.toString("base64") })
       : target.send("Fetch.failRequest", { requestId, errorReason: "BlockedByClient" });
     response.catch((error) => { if (!browser.closing) target.errors.push({ text: error.message }); });
   };
   browser.on("event", listener);
   await target.send("Fetch.enable", { patterns: [{ urlPattern: "https://x.com/*" }] });
+}
+
+async function loadFixture(filename, url = "https://x.com/home") {
+  if (!/^[a-z-]+\.html$/.test(filename)) throw new Error(`Invalid fixture filename: ${filename}`);
+  await page.navigate("about:blank");
+  page.fixtureContent = await readFile(join(root, "scripts/extension-dev/fixtures", filename));
+  resetPageNetwork();
+  await page.navigate(url);
+  await page.send("Page.bringToFront");
+  await receipt();
 }
 
 async function receipt() {
@@ -233,7 +247,7 @@ async function capture(label) {
       }
       const network = inspectNetwork();
       const diagnostics = { errors: [...page.errors], console: [...page.console], network: [...page.network] };
-      const requiresHomeFeed = new URL(values.url).pathname === "/home";
+      const requiresHomeFeed = new URL(snapshot.metrics.url).pathname === "/home";
       const metrics = {
         ...snapshot.metrics, captureCoherent: true,
         authenticated: snapshot.metrics.accountNavigation && snapshot.metrics.primaryColumnVisible && !snapshot.metrics.loginRequired &&
@@ -334,10 +348,48 @@ async function test() {
     await receipt();
     await page.wait("getComputedStyle(document.querySelector('[data-testid=primaryColumn]')).width === '700px'");
   });
+  await check("extension off removes all customizations and on restores a fresh document", async () => {
+    await storage({extensionStatus:"off"});
+    await page.wait(`!document.getElementById('mt-main-stylesheet') && ${visible("promoted-post")} && ${visible("organic-post")}`);
+    assert.equal(await page.evaluate("document.querySelectorAll('[id^=mt-style-]').length"), 0);
+    await storage({extensionStatus:"on"});
+    await receipt();
+    await page.wait(`!${visible("promoted-post")} && ${visible("organic-post")}`);
+  });
   await check("fixture has no uncaught runtime errors", async () => {
     const runtimeErrors = [...page.errors, ...popup.errors].filter((error) => error.exception || error.exceptionId);
     assert.deepEqual(runtimeErrors, []);
   });
+  const audits = { filters: "runFiltersAudit", navigation: "runNavigationAudit", timeline: "runTimelineAudit", interface: "runInterfaceAudit", mindful: "runMindfulAudit", theme: "runThemeAudit", settings: "runSettingsAudit" };
+  const requested = values.suite === "all" ? Object.keys(audits) : values.suite === "smoke" ? [] : values.suite.split(",");
+  const failures = [], coverage = {};
+  for (const name of requested) {
+    if (!audits[name]) throw new Error(`Unknown feature suite: ${name}`);
+    try {
+      await page.navigate("about:blank");
+      await storage(defaultPreferences);
+      const module = await import(`./audit/${name}.js`);
+      coverage[name] = await module[audits[name]]({ page, popup, storage, check, loadFixture, capture });
+    } catch (error) {
+      failures.push({ suite: name, error: error.message });
+      console.error(`FAIL ${name}: ${error.stack}`);
+      try { await capture(`failure-${name}`); } catch { /* Keep the suite's original error. */ }
+    }
+  }
+  await check("all audited settings have defaults and no feature runtime errors", async () => {
+    assert.deepEqual([...allSettingsKeys].sort(), Object.keys(defaultPreferences).sort());
+    assert.equal(new Set(allSettingsKeys).size,allSettingsKeys.length);
+    assert.deepEqual([...page.errors, ...popup.errors].filter(error => error.exception || error.exceptionId), []);
+    const caughtErrors = [...page.console, ...popup.console].filter(entry => entry.type === "error" &&
+      entry.args?.some(argument => /^Zen for X .*failed$/.test(argument.value || "")));
+    assert.deepEqual(caughtErrors, [], "Caught extension failures must fail the audit");
+    if (values.suite === "all") {
+      const covered = new Set(["extensionStatus", ...Object.values(coverage).flat().map(row => row.setting)]);
+      assert.deepEqual(allSettingsKeys.filter(key => !covered.has(key)), [], "Every registered setting needs a behavioral check");
+    }
+  });
+  await writeFile(join(artifacts, "feature-audit.json"), JSON.stringify({ passed: !failures.length, checks, coverage, failures }, null, 2));
+  assert.deepEqual(failures, [], "Every requested feature suite must pass");
   await writeFile(join(artifacts, "report.json"), JSON.stringify({ passed: true, browser: browser.version, build: revision, checks }, null, 2));
 }
 
@@ -413,6 +465,59 @@ async function inspect() {
   }
 }
 
+async function audit() {
+  const current = await popup.send("Extensions.getStorageItems", { id: browser.extensionId, storageArea: "local", keys: allSettingsKeys });
+  const checks = [];
+  let primaryError,blocker;
+  try {
+    if(!values.fixture) {
+      const {pauseTestBrowserBlocker}=await import("./browser-blocker.js");
+      blocker=await pauseTestBrowserBlocker({browser,profile:join(cache,"profiles",values.browser)});
+    }
+    const { runLiveAudit } = await import("./audit/live.js");
+    const result = await runLiveAudit({ page, storage, receipt, capture, artifacts, url:values.url, suite:values.suite, steps:Number(values.steps),
+      validateRead:async () => {
+        if (stopping) throw new Error("Live audit stopped");
+        const state = await page.evaluate(inspectionStateExpression);
+        const { authenticationFailure } = inspectNetwork();
+        if (state.loginRequired || authenticationFailure) throw authenticationError(state, authenticationFailure);
+        await blocker?.verify();
+        const failed = page.network.find(response => response.status >= 400 && /\/(?:Home(?:Latest)?Timeline|UserTweets(?:AndReplies)?|UserMedia|TweetDetail)$/.test(response.url));
+        if (failed) throw new Error(`Core timeline read failed: HTTP ${failed.status} ${failed.url}`);
+      },
+      check:async (name, fn) => { await fn(); checks.push(name); console.log(`PASS ${name}`); },
+      navigate:async (url) => {
+        if (stopping) throw new Error("Live audit stopped");
+        await page.navigate("about:blank");
+        resetPageNetwork();
+        await page.navigate(url);
+        await page.send("Page.bringToFront");
+        await waitForInspectionReady(url);
+      },
+    });
+    await writeFile(join(artifacts,"report.json"), JSON.stringify({passed:true,browser:browser.version,build:revision,checks,result},null,2),{mode:0o600});
+    console.log(result.kind ? `Completed live ${result.kind} audit` : `Audited ${result.uniquePosts} unique posts across ${result.visited.length} routes`);
+  } catch (error) { primaryError = error; throw error; }
+  finally {
+    const failures = [];
+    try { await page.navigate("about:blank"); } catch (error) { failures.push(error); }
+    try { await blocker?.restore(); } catch(error) { failures.push(error); }
+    if(blocker) {
+      try {await writeFile(join(artifacts,"browser-blocker.json"),JSON.stringify(blocker.report,null,2),{mode:0o600});}
+      catch(error) {failures.push(error);}
+    }
+    try {
+      await storage(current.data);
+      const absent = allSettingsKeys.filter(key => !Object.hasOwn(current.data,key));
+      if (absent.length) await popup.send("Extensions.removeStorageItems", {id:browser.extensionId,storageArea:"local",keys:absent});
+    } catch (error) { failures.push(error); }
+    if (failures.length) {
+      if (primaryError) primaryError.cleanupErrors = failures.map(error => ({error:error.message}));
+      else throw new AggregateError(failures,"Live audit preference restoration failed");
+    }
+  }
+}
+
 async function dev() {
   let queued = false, active = false, timer;
   const refresh = async () => {
@@ -480,9 +585,10 @@ try {
     }
     page = await browser.page();
     if (command === "test" || values.fixture) await useFixture(page);
-    if (command !== "inspect") { resetPageNetwork(); await page.navigate(values.url); }
+    if (!["inspect", "audit"].includes(command)) { resetPageNetwork(); await page.navigate(values.url); }
     if (command === "test") await test();
     if (command === "inspect") await inspect();
+    if (command === "audit") await audit();
     if (command === "dev") { await receipt(); await capture("initial"); await dev(); }
   }
 } catch (error) {

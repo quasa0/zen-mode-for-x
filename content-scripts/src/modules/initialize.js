@@ -2,9 +2,8 @@ import { allSettingsKeys } from "../../../storage-keys";
 import { runDynamicFeatures } from "./features/dynamic";
 import { applyStaticFeatures } from "./features/static";
 import addStyleSheet from "./utilities/addStyleSheet";
-import { extractColorsAsRootVars } from "./utilities/colors";
+import { extractColorsAsRootVars, observeThemeColors } from "./utilities/colors";
 import debounce from "./utilities/debounce";
-import { isDevelopmentMode } from "./utilities/isDevelopmentMode";
 import isMutationSkippable from "./utilities/isMutationSkippable";
 import { getStorage } from "./utilities/storage";
 
@@ -20,20 +19,7 @@ export const addStylesheets = async () => {
   addStyleSheet("main", chrome.runtime.getURL("css/main.css"));
   addStyleSheet("typefully", chrome.runtime.getURL("css/typefully.css"));
 
-  // Only fetch from CDN in production
-  if (!(await isDevelopmentMode())) {
-    try {
-      const mainStylesheetFromCDN = await fetch("https://raw.githubusercontent.com/typefully/minimal-twitter/main/css/main.css");
-      const typefullyStylesheetFromCDN = await fetch("https://raw.githubusercontent.com/typefully/minimal-twitter/main/css/typefully.css");
-      const mainText = (await mainStylesheetFromCDN.text()).trim();
-      const typefullyText = (await typefullyStylesheetFromCDN.text()).trim();
-      addStyleSheet("external", null, mainText.concat("\n\n").concat(typefullyText));
-    } catch (error) {
-      console.error("Can't fetch stylesheets from CDN", error);
-    }
-  } else {
-    console.log("🚧 Development mode, not adding CDN-cached stylesheets");
-  }
+  // Bundled styles keep this fork's tested behavior consistent offline and in releases.
 };
 
 const addMutationObserver = () => {
@@ -44,6 +30,9 @@ const addMutationObserver = () => {
 
   observer.observe(document, {
     childList: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["data-testid", "aria-label"],
     subtree: true,
   });
 };
@@ -67,7 +56,7 @@ export const initializeExtension = async () => {
   await addStylesheets();
 
   const allData = await getStorage(allSettingsKeys);
-  applyStaticFeatures(allData);
+  await applyStaticFeatures(allData);
   runDynamicFeatures();
 
   addMutationObserver();
@@ -75,6 +64,7 @@ export const initializeExtension = async () => {
   addResizeListener();
 
   extractColorsAsRootVars();
+  observeThemeColors();
   setTimeout(() => {
     // Let's extract colors when the page is likely fully loaded again
     extractColorsAsRootVars();

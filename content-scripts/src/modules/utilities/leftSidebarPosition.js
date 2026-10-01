@@ -1,8 +1,13 @@
 import selectors from "../../selectors";
-import addStyles from "./addStyles";
+import addStyles, { removeStyles } from "./addStyles";
 
 export function updateLeftSidebarPositioning() {
-    addStyles(
+  const pathname = window.location.pathname;
+  if (pathname.startsWith("/search") || pathname.startsWith("/messages") || pathname.startsWith("/i/chat")) {
+    removeStyles("navigation-position");
+    return;
+  }
+  addStyles(
       "navigation-position",
       `@media only screen and (min-width: 1000px) {
         ${selectors.leftSidebar} {
@@ -16,5 +21,5 @@ export function updateLeftSidebarPositioning() {
           padding-left: 88px;
         }
       }`
-    );
+  );
 }

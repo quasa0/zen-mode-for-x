@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Anonymous mindful scrolling fixture</title>
+  <style>
+    body { margin:0; background:#fff; color:#15202b; font:16px system-ui; }
+    header { width:88px; }
+    header nav { position:fixed; left:12px; top:12px; }
+    main { display:flex; flex-direction:column; width:700px; margin-left:160px; }
+    article { display:block; box-sizing:border-box; min-height:500px; padding:24px; border-bottom:1px solid #ddd; }
+    #composer[hidden] { display:none; }
+    #composer { position:fixed; bottom:24px; left:200px; width:500px; padding:20px; background:white; border:1px solid #aaa; }
+    #composer-editor { min-height:80px; border:1px solid #ddd; }
+    button { padding:8px; }
+  </style>
+</head>
+<body>
+  <header role="banner"><nav role="navigation"><a id="native-home" role="link" data-testid="AppTabBar_Home_Link" href="/home">Home</a></nav></header>
+  <main role="main">
+    <div data-testid="primaryColumn" id="fixture-feed"></div>
+  </main>
+  <div id="composer" hidden><div id="composer-editor" role="textbox" contenteditable="true" data-testid="tweetTextarea_0" aria-label="Post text"></div><button id="native-post" data-testid="tweetButtonInline">Post</button></div>
+  <script>
+    const feed = document.getElementById('fixture-feed');
+    for (let index = 0; index < 12; index++) {
+      const article = document.createElement('article');
+      article.setAttribute('role', 'article');
+      article.dataset.testid = 'tweet';
+      article.innerHTML = '<p>Anonymous fixture post ' + index + '</p><button>Native action</button>';
+      feed.appendChild(article);
+    }
+    window.fixtureNativeArticle = feed.firstElementChild;
+    window.fixtureNativeAction = feed.querySelector('button');
+    window.fixtureNativeClickCount = 0;
+    window.fixtureNativeAction.addEventListener('click', () => window.fixtureNativeClickCount++);
+    document.addEventListener('click', event => { if (event.target.closest('a[href]')) event.preventDefault(); });
+  </script>
+</body>
+</html>
