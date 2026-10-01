@@ -52,7 +52,7 @@ Use Node.js 22 or newer, classic Yarn, the existing project dependencies, and an
 
 1. `yarn test:extension` builds the extension and runs a disposable browser profile. It tests the real popup, content script, storage updates, extension reload, and uninstall/reinstall against an X-shaped fixture. These checks do not verify the latest live X markup.
 2. `yarn dev:extension` watches source files, rebuilds, reloads the extension, and refreshes the host page. It opens a browser window by default. Use `yarn dev:extension --headless --fixture` for an unattended fixture session. Stop the watcher with **Ctrl+C**.
-3. `yarn login:extension` opens the dedicated development profile for a one-time X sign-in before live checks. Profiles are stored in `.cache/extension-dev/profiles/{browser}`. Later sessions reuse that profile.
+3. `yarn login:extension` opens a normal browser window for a one-time X sign-in. This command disables extensions and uses no automation connection or viewport override. Profiles are stored in `.cache/extension-dev/profiles/{browser}`. Quit this dedicated browser or press **Ctrl+C** when finished. Later `dev:extension` and `inspect:extension` sessions reuse its login; fixture tests use disposable profiles.
 4. `yarn inspect:extension --url https://x.com/home` captures the page with the extension disabled and enabled. Screenshots, HTML, layout metrics, and browser errors are saved in the ignored `.cache/extension-dev/artifacts/` directory. Add `--eval-file /absolute/file.js` to run a DOM inspection expression.
 
 Add `--settings /absolute/settings.json` to load registered settings through the real extension storage API. One session runs at a time; a shared session lock serializes these commands.

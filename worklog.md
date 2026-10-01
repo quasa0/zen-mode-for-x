@@ -1,5 +1,12 @@
 # Worklog
 
+## 2026-10-01 — Normal browser login and X account confirmation
+
+- Separated `login:extension` from extension builds and automation. Login now opens the existing dedicated profile in a normal headed browser with extensions disabled, a startup X URL, and no CDP connection, settings popup, or viewport override. Development and inspection still reuse this profile; fixture tests remain disposable. Updated README and agent instructions.
+- Kept direct child ownership, browser logs and PID records, the session lock, and verified descendant cleanup. Normal sessions use shutdown signals instead of a CDP close command. Headless login fails before taking the lock or starting a browser.
+- Diagnosed the existing automated login window. The email submission reached X's new Jetfuel onboarding flow and a mandatory username confirmation. The visible Use password control returned to the same confirmation step. No password field appeared, so password submission and authenticated access remain unverified. No credentials were saved in project files. Cleared the old window's forced viewport. A temporary local Node inspector used for diagnosis was closed and its port was checked.
+- Verification passed: syntax checks, `git diff --check`, normal Helium launch with no debugging/headless flags and extensions disabled, PID ownership and shutdown, and a native CDP fixture regression covering unpacked installation, real injection, promoted-post hiding, organic post/video preservation, and browser cleanup. Headless login rejection returned the expected error. Temporary test profiles and browsers were removed. The existing login window remains open at account confirmation for the requested sign-in; its runner owns the browser.
+
 ## 2026-10-01 — Automated extension development and browser testing
 
 - Added `test:extension`, `dev:extension`, `inspect:extension`, and `login:extension` commands. Native Node CDP pipe automation installs the unpacked extension, reloads it, refreshes its controlled X page, checks the served bundle SHA-256 and executing build receipt, and records screenshots, HTML, layout metrics, console/runtime errors, and response statuses. Test profiles are disposable; live development profiles and artifacts use ignored `.cache/extension-dev` paths. A session lock serializes builds and browser sessions.

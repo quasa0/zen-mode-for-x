@@ -31,6 +31,7 @@ if (values.help) {
 if (!["test", "dev", "inspect", "login"].includes(command)) throw new Error(`Unknown command: ${command}`);
 if (!["helium", "chrome"].includes(values.browser)) throw new Error(`Unknown browser: ${values.browser}`);
 if (new URL(values.url).origin !== "https://x.com") throw new Error("Live inspection URLs must use https://x.com");
+if (command === "login" && values.headless) throw new Error("Login requires a visible browser window. Remove --headless.");
 
 let browser, popup, page, testProfile, lock, revision, stopping = false;
 const watchers = [];
@@ -265,31 +266,42 @@ async function dev() {
 try {
   await acquireLock();
   await mkdir(artifacts, { recursive: true, mode: 0o700 });
-  const info = await build({ force: values.force, signal: abort.signal });
   if (stopping) throw new Error("Stopped before browser launch");
-  if (command === "test") testProfile = await mkdtemp(join(tmpdir(), "zen-extension-test-"));
-  browser = await Browser.launch({
-    browser: values.browser,
-    profile: testProfile || join(cache, "profiles", values.browser),
-    headless: values.headed ? false : values.headless || command === "test",
-    logPath: join(artifacts, "browser.log"),
-  });
-  console.log(`Browser: ${browser.version.product}`);
-  await reload(info);
-  if (values.settings) {
-    const data = JSON.parse(await readFile(resolve(values.settings), "utf8"));
-    if (!data || Array.isArray(data) || typeof data !== "object" || Object.keys(data).some((key) => !allSettingsKeys.includes(key))) throw new Error("Settings must be an object containing registered extension keys");
-    await storage(data);
-  }
-  page = await browser.page();
-  if (command === "test" || values.fixture) await useFixture(page);
-  if (command !== "inspect") await page.navigate(values.url);
-  if (command === "test") await test();
-  if (command === "inspect") await inspect();
-  if (command === "dev") { await receipt(); await capture("initial"); await dev(); }
   if (command === "login") {
-    console.log("Sign in to X in this dedicated browser window. Close the window or press Ctrl+C when finished. Later test runs reuse this profile.");
+    browser = await Browser.launch({
+      browser: values.browser,
+      profile: join(cache, "profiles", values.browser),
+      headless: false,
+      automation: false,
+      url: values.url,
+      logPath: join(artifacts, "browser.log"),
+    });
+    console.log("Sign in to X in this dedicated browser window. Quit this dedicated browser or press Ctrl+C when finished. Later dev and inspect sessions reuse this profile.");
     await Promise.race([stopped, browser.exited]);
+    if (!stopping && browser.process.exitCode !== 0) throw new Error(`Login browser exited with ${browser.process.signalCode || browser.process.exitCode}. See ${join(artifacts, "browser.log")}`);
+  } else {
+    const info = await build({ force: values.force, signal: abort.signal });
+    if (stopping) throw new Error("Stopped before browser launch");
+    if (command === "test") testProfile = await mkdtemp(join(tmpdir(), "zen-extension-test-"));
+    browser = await Browser.launch({
+      browser: values.browser,
+      profile: testProfile || join(cache, "profiles", values.browser),
+      headless: values.headed ? false : values.headless || command === "test",
+      logPath: join(artifacts, "browser.log"),
+    });
+    console.log(`Browser: ${browser.version.product}`);
+    await reload(info);
+    if (values.settings) {
+      const data = JSON.parse(await readFile(resolve(values.settings), "utf8"));
+      if (!data || Array.isArray(data) || typeof data !== "object" || Object.keys(data).some((key) => !allSettingsKeys.includes(key))) throw new Error("Settings must be an object containing registered extension keys");
+      await storage(data);
+    }
+    page = await browser.page();
+    if (command === "test" || values.fixture) await useFixture(page);
+    if (command !== "inspect") await page.navigate(values.url);
+    if (command === "test") await test();
+    if (command === "inspect") await inspect();
+    if (command === "dev") { await receipt(); await capture("initial"); await dev(); }
   }
 } catch (error) {
   if (!stopping) {

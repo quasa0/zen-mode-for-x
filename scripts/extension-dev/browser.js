@@ -1,5 +1,5 @@
 import { spawn, execFile } from "node:child_process";
-import { EventEmitter } from "node:events";
+import { EventEmitter, once } from "node:events";
 import { createWriteStream } from "node:fs";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import { dirname } from "node:path";
@@ -21,11 +21,13 @@ export class Browser extends EventEmitter {
   closing = false;
   detachedSessions = new Set();
 
-  static async launch({ browser = "helium", profile, headless = true, logPath }) {
+  static async launch({ browser = "helium", profile, headless = true, logPath, automation = true, url = "about:blank" }) {
     if (!executables[browser]) throw new Error(`Unknown browser: ${browser}`);
+    if (!automation && headless) throw new Error("Normal browser sessions require a visible window");
     await mkdir(profile, { recursive: true, mode: 0o700 });
     await mkdir(dirname(logPath), { recursive: true });
     const connection = new Browser();
+    connection.automation = automation;
     connection.log = createWriteStream(logPath, { flags: "a", mode: 0o600 });
     connection.log.on("error", (error) => {
       connection.disconnected = error;
@@ -35,13 +37,14 @@ export class Browser extends EventEmitter {
     connection.pidPath = `${logPath}.pid`;
     const args = [
       `--user-data-dir=${profile}`,
-      "--remote-debugging-pipe",
       "--no-first-run",
       "--no-default-browser-check",
-      ...(headless ? ["--headless=new"] : []),
+      ...(automation
+        ? ["--remote-debugging-pipe", ...(headless ? ["--headless=new"] : [])]
+        : ["--disable-extensions", url]),
     ];
     connection.process = spawn(executables[browser], args, {
-      stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"],
+      stdio: automation ? ["ignore", "ignore", "pipe", "pipe", "pipe"] : ["ignore", "ignore", "pipe"],
     });
     const child = connection.process;
     connection.exited = new Promise((resolve) => { child.once("close", resolve); child.once("error", resolve); });
@@ -49,18 +52,22 @@ export class Browser extends EventEmitter {
     const disconnect = (error) => { connection.disconnected = error; connection.fail(error); };
     child.once("error", disconnect);
     child.once("exit", () => disconnect(new Error("Browser exited")));
-    child.stdio[3].on("error", disconnect);
-    child.stdio[4].on("error", disconnect);
-    child.stdio[4].once("close", () => disconnect(new Error("CDP pipe closed")));
-    child.stdio[4].on("data", (data) => connection.receive(data));
+    if (automation) {
+      child.stdio[3].on("error", disconnect);
+      child.stdio[4].on("error", disconnect);
+      child.stdio[4].once("close", () => disconnect(new Error("CDP pipe closed")));
+      child.stdio[4].on("data", (data) => connection.receive(data));
+    }
     try {
+      await once(child, "spawn");
       if (child.pid) await writeFile(connection.pidPath, String(child.pid), { mode: 0o600 });
+      if (!automation) return connection;
       connection.version = await connection.send("Browser.getVersion");
       await connection.send("Extensions.getExtensions");
       return connection;
     } catch (error) {
       await connection.close();
-      throw new Error(`Browser extension automation is unavailable: ${error.message}. See ${logPath}`);
+      throw new Error(`${automation ? "Browser extension automation is unavailable" : "Browser launch failed"}: ${error.message}. See ${logPath}`);
     }
   }
 
@@ -104,6 +111,7 @@ export class Browser extends EventEmitter {
   }
 
   send(method, params = {}, sessionId, timeout = 15000) {
+    if (!this.automation) return Promise.reject(new Error("This normal browser session has no CDP connection"));
     if (this.disconnected) return Promise.reject(this.disconnected);
     if (this.detachedSessions.has(sessionId)) return Promise.reject(new Error("Browser target detached"));
     if (this.process.exitCode !== null || this.process.signalCode !== null) {
@@ -160,9 +168,11 @@ export class Browser extends EventEmitter {
             }
           }
         } while (added);
-      } catch { /* Browser.close still works when ps is unavailable. */ }
-      await this.send("Browser.close", {}, undefined, 2000).catch(() => {});
-      await Promise.race([this.exited, delay(2000)]);
+      } catch { /* The owned browser still receives shutdown signals when ps is unavailable. */ }
+      if (this.automation) {
+        await this.send("Browser.close", {}, undefined, 2000).catch(() => {});
+        await Promise.race([this.exited, delay(2000)]);
+      }
       if (child.exitCode === null && child.signalCode === null) {
         child.kill("SIGTERM");
         await Promise.race([this.exited, delay(1000)]);
