@@ -52,6 +52,19 @@
         height: 160px;
         background: rgb(239, 243, 244);
       }
+
+      .r-13qz1uu {
+        width: 100%;
+      }
+
+      #fixture-search {
+        height: 44px;
+        background: rgb(239, 243, 244);
+      }
+
+      #fixture-search input {
+        height: 40px;
+      }
     </style>
   </head>
   <body>
@@ -74,9 +87,16 @@
         </section>
         <div class="fixture-controls">
           <button id="add-post" type="button">Insert organic post</button>
+          <div id="unrelated-position" style="position: relative; left: -12px;">Unrelated positioned content</div>
         </div>
       </div>
       <aside data-testid="sidebarColumn" aria-label="Right sidebar">
+        <form id="fixture-search" class="r-13qz1uu" role="search">
+          <div>
+            <span aria-hidden="true">⌕</span>
+            <input data-testid="SearchBox_Search_Input" placeholder="Search" aria-label="Search query" />
+          </div>
+        </form>
         <p>Right sidebar fixture</p>
       </aside>
     </main>

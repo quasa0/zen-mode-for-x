@@ -21,8 +21,9 @@ Requires [classic yarn](https://classic.yarnpkg.com/lang/en/docs/install/).
 
 - `yarn build` or `yarn bundle` - Builds and bundles the extension for all browsers (prompts for browser choice)
 - `yarn test:extension` - Builds and tests the real extension in a disposable headless Helium profile. Add `--browser chrome` for Chrome.
+- `yarn test:extension:profile` - Checks cookie persistence across normal quit and automated restart in a disposable profile. Opens a temporary normal window; do not run while the user is entering credentials.
 - `yarn dev:extension --headless --fixture` - Watches sources and verifies automated build, extension reload, and host-page refresh against the fixture.
-- `yarn inspect:extension --url https://x.com/home` - Captures a live page with the extension disabled and enabled. Requires one-time sign-in with `yarn login:extension`.
+- `yarn inspect:extension --url https://x.com/home` - Captures fresh disabled/enabled pages and writes `comparison.html`. Holds the first Home feed response constant after a successful real request; later pagination stays live. Requires one-time sign-in with `yarn login:extension`.
 - `yarn login:extension` - Opens the dedicated profile in a normal headed browser with extensions disabled and no CDP connection. Quit this browser or press Ctrl+C before starting a development or inspection session. Fixture tests use disposable profiles.
 - Builds both popup (Next.js) and content-scripts (Rollup) automatically
 - Creates bundled packages in `/bundle/` directory for Chrome, Firefox, and Safari

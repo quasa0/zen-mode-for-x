@@ -7,6 +7,7 @@
     "bump-version": "node ./bump-version.js",
     "reload:chrome": "node ./reload-extension.js",
     "test:extension": "node scripts/extension-dev/index.js test",
+    "test:extension:profile": "node scripts/extension-dev/profile-test.js",
     "dev:extension": "node scripts/extension-dev/index.js dev",
     "inspect:extension": "node scripts/extension-dev/index.js inspect",
     "login:extension": "node scripts/extension-dev/index.js login"

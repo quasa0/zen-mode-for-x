@@ -84,36 +84,27 @@ a[href*="quick_promote_web"] {
 /* Reveal searchbar and search filters at desktop breakpoint */
 @media only screen and (min-width: 1100px) {
   /* Reveal searchbar */
-  [data-testid="sidebarColumn"] form[role="search"] {
+  [data-testid="sidebarColumn"] form[role="search"]:has([data-testid="SearchBox_Search_Input"]) {
     visibility: visible;
     position: fixed;
     top: 12px;
+    left: auto;
     right: 16px;
-  }
-
-  /* Match size of input the placeholder content */
-  [data-testid="sidebarColumn"] input[placeholder="Search Twitter"] {
-    width: 150px;
+    box-sizing: border-box;
+    width: 200px;
+    min-width: 0;
+    max-width: calc(100vw - 32px);
   }
 
   /* Match size of focused search container to its dropdown */
   /* Add blur filter to search container for overlap */
-  [data-testid="sidebarColumn"] form[role="search"]:focus-within {
+  [data-testid="sidebarColumn"] form[role="search"]:has([data-testid="SearchBox_Search_Input"]):focus-within {
     width: 374px;
     backdrop-filter: blur(12px);
   }
 
-  [data-testid="sidebarColumn"] form[role="search"] input:focus {
+  [data-testid="sidebarColumn"] form[role="search"]:focus-within [data-testid="SearchBox_Search_Input"] {
     width: 100% !important;
-  }
-
-  /* Reset width and left positioning to align search dropdown */
-  div[style*="left: -12px"] {
-    left: unset;
-  }
-  div[style="left: -8px; width: 306px;"] {
-    left: unset;
-    width: 374px;
   }
 }
 

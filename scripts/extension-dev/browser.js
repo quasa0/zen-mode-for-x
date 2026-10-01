@@ -151,6 +151,12 @@ export class Browser extends EventEmitter {
       const child = this.process;
       if (!child) return;
       if (!child.pid) { this.log.end(); return; }
+      const waitForExit = async (milliseconds) => {
+        let timer;
+        try {
+          return await Promise.race([this.exited.then(() => true), new Promise((resolve) => { timer = setTimeout(() => resolve(false), milliseconds); })]);
+        } finally { clearTimeout(timer); }
+      };
       // Record descendants before shutdown so a failed browser cannot leave helpers running.
       const descendants = [];
       try {
@@ -169,17 +175,27 @@ export class Browser extends EventEmitter {
           }
         } while (added);
       } catch { /* The owned browser still receives shutdown signals when ps is unavailable. */ }
+      let forcedShutdown = false;
       if (this.automation) {
         await this.send("Browser.close", {}, undefined, 2000).catch(() => {});
-        await Promise.race([this.exited, delay(2000)]);
+        await waitForExit(10000);
+      } else if (child.exitCode === null && child.signalCode === null) {
+        // On macOS, SIGINT calls Chromium's AttemptExit and flushes the profile.
+        // SIGTERM calls SessionEnding and can discard pending cookie writes.
+        // https://github.com/chromium/chromium/blob/154.0.8037.92/chrome/browser/chrome_browser_main_posix.cc
+        child.kill("SIGINT");
+        await waitForExit(10000);
       }
       if (child.exitCode === null && child.signalCode === null) {
+        forcedShutdown = true;
         child.kill("SIGTERM");
-        await Promise.race([this.exited, delay(1000)]);
+        await waitForExit(1000);
       }
       if (child.exitCode === null && child.signalCode === null) {
         child.kill("SIGKILL");
-        await this.exited;
+        // A helper can hold inherited pipes open after the browser exits.
+        // Stop descendants before requiring the child close event.
+        await waitForExit(1000);
       }
       for (const pid of descendants.reverse()) {
         try { process.kill(pid, "SIGTERM"); } catch { /* Already stopped. */ }
@@ -191,9 +207,15 @@ export class Browser extends EventEmitter {
       }
       for (let attempt = 0; attempt < 10 && descendants.some(alive); attempt++) await delay(100);
       if (descendants.some(alive)) throw new Error(`Browser helpers did not exit: ${descendants.filter(alive).join(", ")}`);
+      if (child.exitCode === null && child.signalCode === null) throw new Error(`Browser did not exit: ${child.pid}`);
+      if (!await waitForExit(1000)) {
+        for (const stream of child.stdio) stream?.destroy?.();
+        if (!await waitForExit(1000)) throw new Error("Browser pipes did not close after process cleanup");
+      }
       this.fail(new Error("Browser closed"));
       this.log.end();
       await rm(this.pidPath, { force: true });
+      if (forcedShutdown) throw new Error("Browser required a forced shutdown; recent profile changes may not have been saved");
     })();
     return this.closePromise;
   }
@@ -216,7 +238,8 @@ export class Page {
         const { response, type } = event.params;
         const url = new URL(response.url);
         if (["http:", "https:", "chrome-extension:"].includes(url.protocol)) {
-          this.network.push({ url: url.origin + url.pathname, status: response.status, type });
+          const origin = url.protocol === "chrome-extension:" ? `chrome-extension://${url.host}` : url.origin;
+          this.network.push({ url: origin + url.pathname, status: response.status, type });
         }
       }
       this.errors = this.errors.slice(-200);
