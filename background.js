@@ -1,4 +1,6 @@
-// Used by the manifest v3 extension
+import { registerInfluenceBackground } from "./influence-background.js";
+
+registerInfluenceBackground();
 
 chrome.runtime.onInstalled.addListener((object) => {
   if (object.reason !== "install") {

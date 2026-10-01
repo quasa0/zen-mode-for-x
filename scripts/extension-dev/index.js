@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { watch } from "node:fs";
-import { mkdir, mkdtemp, open, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, open, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { parseArgs } from "node:util";
@@ -21,6 +21,7 @@ const { values, positionals } = parseArgs({
     fixture: { type: "boolean" },
     settings: { type: "string" },
     "eval-file": { type: "string" },
+    "jev-key-file": { type: "string" },
     suite: { type: "string", default: "all" },
     steps: { type: "string", default: "48" },
     help: { type: "boolean" },
@@ -29,7 +30,7 @@ const { values, positionals } = parseArgs({
 const command = positionals[0] || "test";
 values.url ??= command === "login" ? "https://x.com/i/flow/login" : "https://x.com/home";
 if (values.help) {
-  console.log("Usage: node scripts/extension-dev/index.js <test|dev|inspect|audit|login> [--browser helium|chrome] [--url https://x.com/...] [--headless|--headed] [--fixture] [--force] [--settings file.json] [--eval-file file.js] [--suite all|smoke|filters,navigation,timeline,interface,mindful,theme,settings (test) or all|focus|media|labels (audit)] [--steps 12..120]");
+  console.log("Usage: node scripts/extension-dev/index.js <test|dev|inspect|audit|login> [--browser helium|chrome] [--url https://x.com/...] [--headless|--headed] [--fixture] [--force] [--settings file.json] [--eval-file file.js] [--jev-key-file private-file] [--suite all|smoke|filters,navigation,timeline,interface,mindful,theme,settings,influence (test) or all|focus|media|labels (audit)] [--steps 12..120]");
   process.exit(0);
 }
 if (!["test", "dev", "inspect", "audit", "login"].includes(command)) throw new Error(`Unknown command: ${command}`);
@@ -37,6 +38,7 @@ if (!Number.isInteger(Number(values.steps)) || Number(values.steps) < 12 || Numb
 if (!["helium", "chrome"].includes(values.browser)) throw new Error(`Unknown browser: ${values.browser}`);
 if (new URL(values.url).origin !== "https://x.com") throw new Error("Live inspection URLs must use https://x.com");
 if (command === "login" && values.headless) throw new Error("Login requires a visible browser window. Remove --headless.");
+if (values["jev-key-file"] && !["inspect", "audit"].includes(command)) throw new Error("A private Jev key file is supported only for live inspect/audit sessions.");
 
 let browser, popup, page, testProfile, lock, revision, stopping = false;
 let homeResponse, authenticationFailure, failureCaptureAttempted = false;
@@ -142,7 +144,8 @@ async function waitForInspectionReady(url = values.url) {
 
 async function installedPopup(info) {
   if (popup) await popup.close();
-  popup = await browser.page(`chrome-extension://${browser.extensionId}/index.html`);
+  popup = await browser.page();
+  await popup.navigate(`chrome-extension://${browser.extensionId}/index.html`);
   await popup.wait("document.body.innerText.includes('Timeline')");
   const actualHash = await popup.evaluate(`(async () => {
     const response = await fetch(chrome.runtime.getURL('dist/main.js'));
@@ -153,11 +156,47 @@ async function installedPopup(info) {
   assert.equal(actualHash, info.contentSha256, "Browser must serve the completed build");
 }
 
+async function configureJev() {
+  const path = resolve(values["jev-key-file"]);
+  const info = await stat(path);
+  if (!info.isFile() || (info.mode & 0o077) || info.size > 512) throw new Error("The Jev key file must be a private file (mode 0600) under 512 bytes.");
+  const apiKey = (await readFile(path, "utf8")).trim();
+  if (!/^apikey_[A-Za-z0-9_]+$/.test(apiKey)) throw new Error("The private Jev key file does not contain a valid key format.");
+  const response = await popup.evaluate(`new Promise(resolve => chrome.runtime.sendMessage({type:'zen-influence:configure',apiKey:${JSON.stringify(apiKey)}}, response => resolve(chrome.runtime.lastError ? {ok:false,error:'runtime-unavailable'} : response)))`);
+  if (!response?.ok || !response.configured) throw new Error(`The extension could not save the private Jev key (${response?.error || "no-response"}).`);
+  console.log("Jev key saved in private extension storage; no credential output.");
+}
+
 async function reload(info) {
+  if (!browser.extensionId) {
+    const manager = await browser.page("chrome://extensions");
+    try {
+      // Enable the ordinary unpacked-extension setting in this dedicated profile.
+      // CDP installation alone bypasses it, so runtime.reload would disable the extension.
+      await manager.evaluate("new Promise((resolve,reject) => chrome.developerPrivate.updateProfileConfiguration({inDeveloperMode:true}, () => chrome.runtime.lastError ? reject(new Error('Developer mode update failed')) : resolve(true)))");
+    } finally { await manager.close(); }
+  }
   const { id } = await browser.send("Extensions.loadUnpacked", { path: bundlePath });
   if (browser.extensionId) assert.equal(id, browser.extensionId, "Extension ID changed during reload");
   browser.extensionId = id;
   await installedPopup(info);
+  const backgroundReceipt = () => popup.evaluate("new Promise(resolve => chrome.runtime.sendMessage({type:'zen-dev:background-receipt'}, response => resolve(chrome.runtime.lastError ? null : response)))");
+  if ((await backgroundReceipt())?.revision !== info.revision) {
+    // loadUnpacked can retain a registered worker from the persistent profile.
+    // A runtime reload unregisters it without deleting preferences or credentials.
+    await popup.evaluate("setTimeout(() => chrome.runtime.reload(), 0); true");
+    let reloadError;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      try { await installedPopup(info); reloadError = null; break; }
+      catch (error) {
+        reloadError = error;
+        if (!/ERR_BLOCKED_BY_CLIENT|ERR_ABORTED|Target closed|Session closed|No session/.test(error.message)) throw error;
+      }
+    }
+    if (reloadError) throw reloadError;
+  }
+  assert.equal((await backgroundReceipt())?.revision, info.revision, "The executing background must match the completed build");
   // Fresh navigation destroys the previous document and its stale content-script observers.
   if (page) { await page.navigate("about:blank"); resetPageNetwork(); await page.navigate(values.url); }
   revision = info;
@@ -360,7 +399,7 @@ async function test() {
     const runtimeErrors = [...page.errors, ...popup.errors].filter((error) => error.exception || error.exceptionId);
     assert.deepEqual(runtimeErrors, []);
   });
-  const audits = { filters: "runFiltersAudit", navigation: "runNavigationAudit", timeline: "runTimelineAudit", interface: "runInterfaceAudit", mindful: "runMindfulAudit", theme: "runThemeAudit", settings: "runSettingsAudit" };
+  const audits = { filters: "runFiltersAudit", navigation: "runNavigationAudit", timeline: "runTimelineAudit", interface: "runInterfaceAudit", mindful: "runMindfulAudit", theme: "runThemeAudit", settings: "runSettingsAudit", influence: "runInfluenceAudit" };
   const requested = values.suite === "all" ? Object.keys(audits) : values.suite === "smoke" ? [] : values.suite.split(",");
   const failures = [], coverage = {};
   for (const name of requested) {
@@ -419,6 +458,8 @@ async function inspect() {
       const result = await page.evaluate(await readFile(resolve(values["eval-file"]), "utf8"));
       await writeFile(join(artifacts, "evaluation.json"), JSON.stringify({ result }, null, 2), { mode: 0o600 });
     }
+    const influenceStatus = await popup.evaluate("new Promise(resolve => chrome.runtime.sendMessage({type:'zen-influence:status'},resolve))");
+    await writeFile(join(artifacts, "influence-status.json"), JSON.stringify(influenceStatus, null, 2), { mode: 0o600 });
     await waitForInspectionReady();
     const metrics = await capture("extension");
     const passed = values.fixture || metrics.authenticated && !metrics.loginRequired;
@@ -578,6 +619,7 @@ try {
     });
     console.log(`Browser: ${browser.version.product}`);
     await reload(info);
+    if (values["jev-key-file"]) await configureJev();
     if (values.settings) {
       const data = JSON.parse(await readFile(resolve(values.settings), "utf8"));
       if (!data || Array.isArray(data) || typeof data !== "object" || Object.keys(data).some((key) => !allSettingsKeys.includes(key))) throw new Error("Settings must be an object containing registered extension keys");

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Influence warning audit / X</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: white; color: rgb(15,20,25); font: 16px system-ui; }
+    main { display: flex; min-height: 100vh; }
+    [data-testid=primaryColumn] { width: 600px; max-width: 100%; border: 1px solid #ddd; }
+    #home-header { padding: 12px 16px; }
+    h2 { margin: 0; font-size: 18px; }
+    article { border-bottom: 1px solid #ddd; padding: 12px 16px; min-height: 104px; }
+    [data-testid=User-Name] { display: flex; align-items: center; gap: 8px; font-size: 14px; min-height: 22px; }
+    [data-testid=tweetText] { margin: 8px 0; overflow-wrap: anywhere; }
+    [data-testid=quoteTweet] { border: 1px solid #ddd; padding: 8px; font-size: 13px; }
+    [role=group] { display: flex; gap: 20px; }
+    button { cursor: pointer; }
+    svg { width: 18px; height: 18px; }
+    #offscreen-spacer { height: 1600px; }
+    #hidden-post { display: none; }
+  </style>
+</head>
+<body>
+<main role="main">
+  <div data-testid="primaryColumn"><div>
+    <div id="home-header"><h2>Home</h2></div>
+    <section aria-labelledby="accessible-list-home" id="fixture-posts">
+      <h2 id="accessible-list-home" hidden>Your Home timeline</h2>
+      <article id="sales-post" data-testid="tweet" role="article">
+        <div data-testid="User-Name"><a href="/fixture" role="link">Fixture</a><a id="sales-time" href="/fixture/status/101?s=20" role="link"><time datetime="2026-10-01T12:00:00Z">1h</time></a></div>
+        <div data-testid="tweetText">Sales offer: my coaching program costs $299. DM me for the payment link.</div>
+        <div role="group"><button data-testid="reply">Reply</button><button data-testid="like">Like</button><button data-testid="bookmark">Bookmark</button></div>
+      </article>
+      <article id="helpful-post" data-testid="tweet" role="article">
+        <div data-testid="User-Name"><a href="/fixture" role="link">Fixture</a><a href="/fixture/status/102" role="link"><time>1h</time></a></div>
+        <div data-testid="tweetText">Helpful advice: profile first, inspect the longest commit, and move state near its consumers.</div>
+        <div role="group"><button data-testid="reply">Reply</button><button data-testid="like">Like</button></div>
+      </article>
+      <article id="quote-post" data-testid="tweet" role="article">
+        <div data-testid="User-Name"><a href="/fixture" role="link">Fixture</a><a href="/fixture/status/103" role="link"><time>1h</time></a></div>
+        <div data-testid="tweetText">Quote discussion: I ignore pitches like this. Show the evidence instead of promising a secret.</div>
+        <div data-testid="quoteTweet" role="link" tabindex="0">
+          <a href="/marketer/status/903"><time>2h</time></a>
+          <div data-testid="tweetText">Only three spots left! Comment SECRET to learn the trick to getting rich.</div>
+        </div>
+        <div role="group"><button data-testid="reply">Reply</button><button data-testid="like">Like</button></div>
+      </article>
+      <article id="soft-post" data-testid="tweet" role="article">
+        <div data-testid="User-Name"><a href="/fixture" role="link">Fixture</a><a href="/fixture/status/104" role="link"><time>1h</time></a></div>
+        <div data-testid="tweetText">Soft promotion: I made a planning app with a paid tier. It might be useful if you manage several projects.</div>
+        <div role="group"><button data-testid="reply">Reply</button><button data-testid="like">Like</button></div>
+      </article>
+      <article id="recycled-post" data-testid="tweet" role="article">
+        <div data-testid="User-Name"><a href="/fixture" role="link">Fixture</a><a id="recycled-time" href="/fixture/status/105" role="link"><time>1h</time></a></div>
+        <div data-testid="tweetText">Fear of missing out: everyone is getting ahead. Start tonight or you will be left behind.</div>
+        <div role="group"><button data-testid="reply">Reply</button><button data-testid="like">Like</button></div>
+      </article>
+      <article id="protected-post" data-testid="tweet" role="article">
+        <div data-testid="User-Name"><a href="/private" role="link">Private account</a><svg aria-label="Protected account" role="img"></svg><a href="/private/status/106"><time>1h</time></a></div>
+        <div data-testid="tweetText">Protected post content must never leave this browser.</div>
+      </article>
+      <article id="hidden-post" data-testid="tweet" role="article">
+        <div data-testid="User-Name"><a href="/fixture/status/107"><time>1h</time></a></div>
+        <div data-testid="tweetText">Hidden post content must never be scanned.</div>
+      </article>
+    </section>
+    <div id="late-posts"></div>
+    <div id="offscreen-spacer"></div>
+    <article id="offscreen-post" data-testid="tweet" role="article">
+      <div data-testid="User-Name"><a href="/fixture/status/108"><time>1h</time></a></div>
+      <div data-testid="tweetText">Offscreen post must wait until it is actually visible.</div>
+    </article>
+  </div></div>
+</main>
+<script>
+  window.fixture = {
+    nativeNodes: [...document.querySelectorAll('[data-testid=tweet], [data-testid=User-Name] a, [data-testid=tweet] button')],
+    nativeClicks: 0,
+  };
+  fixture.nativeNodes.forEach(node => node.addEventListener('click', () => fixture.nativeClicks++));
+  fixture.addPost = (id, status, text) => {
+    const post = document.createElement('article'); post.id = id; post.dataset.testid = 'tweet'; post.setAttribute('role', 'article');
+    const name = document.createElement('div'); name.dataset.testid = 'User-Name';
+    const author = document.createElement('a'); author.href = '/fixture'; author.textContent = 'Fixture';
+    const anchor = document.createElement('a'); anchor.href = '/fixture/status/' + status; const time = document.createElement('time'); time.textContent = 'now'; anchor.appendChild(time); name.append(author, anchor);
+    const content = document.createElement('div'); content.dataset.testid = 'tweetText'; content.textContent = text;
+    post.append(name, content); document.getElementById('late-posts').appendChild(post); return true;
+  };
+  fixture.reuse = (id, status, text) => {
+    const post = document.getElementById(id);
+    post.querySelector('[data-testid=User-Name] a[href*="/status/"]').href = '/fixture/status/' + status;
+    post.querySelector('[data-testid=tweetText]').textContent = text;
+    return true;
+  };
+  fixture.addProtectedQuote = (id, status) => {
+    fixture.addPost(id, status, 'Sales offer: public commentary around a protected quotation must stay local.');
+    const quote = document.createElement('div'); quote.dataset.testid = 'quoteTweet'; quote.setAttribute('role', 'link');
+    const name = document.createElement('div'); name.dataset.testid = 'User-Name';
+    const author = document.createElement('span'); author.textContent = 'Protected quoted author';
+    const lock = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); lock.setAttribute('aria-label', 'Protected account');
+    name.append(author, lock);
+    const text = document.createElement('div'); text.dataset.testid = 'tweetText'; text.textContent = 'Protected quoted secret: these private words must never reach Jev.';
+    quote.append(name, text); document.getElementById(id).appendChild(quote); return true;
+  };
+  fixture.addHeaderlessPost = (id, status) => {
+    fixture.addPost(id, status, 'Sales offer: a headerless incomplete post must never be scanned.');
+    const post = document.getElementById(id); const name = post.querySelector('[data-testid=User-Name]');
+    const time = name.querySelector('a[href*="/status/"]'); post.prepend(time); name.remove(); return true;
+  };
+  fixture.removeLate = () => { document.getElementById('late-posts').replaceChildren(); return true; };
+</script>
+</body>
+</html>

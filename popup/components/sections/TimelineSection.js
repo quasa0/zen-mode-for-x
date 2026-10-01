@@ -18,6 +18,7 @@ import {
 import useMounted from "../../utilities/hooks/useMounted";
 import TimelineWidthSlider from "../controls/TimelineWidthSlider";
 import ScrollLimits from "../controls/ScrollLimits";
+import InfluenceWarnings from "../controls/InfluenceWarnings";
 import VanityCheckboxes from "../controls/VanityCheckboxes";
 import ControlsWrapper from "../ui/ControlsWrapper";
 import SectionLabel from "../ui/SectionLabel";
@@ -35,6 +36,8 @@ const TimelineSection = () => {
         <ControlsWrapper id="user-control-timeline">
           <TimelineWidthSlider />
           <ScrollLimits />
+          <Separator />
+          <InfluenceWarnings />
           <Separator />
           <SwitchControl
             label="Zen Writer Mode"

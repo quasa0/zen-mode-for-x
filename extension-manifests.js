@@ -19,6 +19,7 @@ const manifest = {
 export const MANIFEST_CHROME = {
   ...manifest,
   manifest_version: 3,
+  host_permissions: ["https://api.typesafe.ai/*"],
   background: {
     service_worker: "background.js",
     type: "module",
@@ -62,6 +63,7 @@ export const MANIFEST_CHROME = {
 export const MANIFEST_FIREFOX = {
   ...manifest,
   manifest_version: 2,
+  permissions: [...manifest.permissions, "https://api.typesafe.ai/*"],
   browser_specific_settings: {
     gecko: {
       id: "{e7476172-097c-4b77-b56e-f56a894adca9}",

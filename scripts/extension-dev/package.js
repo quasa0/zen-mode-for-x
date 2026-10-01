@@ -6,6 +6,7 @@ import { join, resolve, sep } from "node:path";
 import { promisify, parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
 import { build, cache, root, sourceDigest } from "./build.js";
+import { copyBackground, backgroundSources } from "./background.js";
 
 const run = promisify(execFile);
 const exists = async (path) => {
@@ -58,6 +59,7 @@ async function validateDirectory(directory, manifest) {
     ...(manifest.content_scripts || []).flatMap((entry) => [...(entry.js || []), ...(entry.css || [])]),
     ...(manifest.web_accessible_resources || []).flatMap((entry) => typeof entry === "string" ? [entry] : entry.resources),
   ].filter(Boolean);
+  if (manifest.manifest_version === 3) resources.push(...backgroundSources);
   for (const resource of new Set(resources)) {
     const path = resolve(directory, resource);
     assert.ok(path.startsWith(directory + sep), `Manifest resource must stay in the package: ${resource}`);
@@ -65,6 +67,8 @@ async function validateDirectory(directory, manifest) {
   }
   const content = await readFile(join(directory, "dist/main.js"), "utf8");
   assert.equal(content.includes("Development build receipt") || content.includes("dataset.zenDevBuild"), false, "Release content must not include a development receipt");
+  const background = await readFile(join(directory, "background.js"), "utf8");
+  assert.equal(background.includes("zen-dev:background-receipt"), false, "Release background must not include a development receipt");
   assert.equal(await exists(join(directory, "build-info.json")), false, "Release package must not include development build metadata");
 }
 
@@ -132,7 +136,7 @@ export async function packageExtensions({ browser = "all", signal } = {}) {
       for (const [source, destination] of [["content-scripts/dist", "dist"], ["css", "css"], ["fonts", "fonts"], ["images", "images"]]) {
         await cp(join(root, source), join(directory, destination), copyOptions);
       }
-      await cp(join(root, "background.js"), join(directory, "background.js"));
+      await copyBackground(root, directory, manifest);
       await writeFile(join(directory, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
       await validateDirectory(directory, manifest);
       const archive = join(staging, `${target}.zip`);

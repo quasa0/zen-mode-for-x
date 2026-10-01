@@ -1,10 +1,12 @@
 import { MANIFEST_CHROME, MANIFEST_FIREFOX } from "./extension-manifests.js";
 import { exec } from "child_process";
 import { copy } from "fs-extra";
-import { copyFile, rm, writeFile } from "fs/promises";
+import { rm, writeFile } from "fs/promises";
 import process from "process";
 import readline from "readline";
 import zipper from "zip-local";
+import { copyBackground } from "./scripts/extension-dev/background.js";
+import { resolve } from "node:path";
 
 const runCommand = (command, yes) =>
   new Promise((resolve, reject) => {
@@ -72,7 +74,7 @@ const bundle = async (manifest, bundleDirectory) => {
     console.log(`🚗  Moved content_scripts to bundle.`);
 
     // Bundle background.js
-    await copyFile("background.js", `${bundleDirectory}/background.js`);
+    await copyBackground(process.cwd(), resolve(bundleDirectory), manifest);
     console.log(`🚗  Moved background.js to bundle.`);
 
     // Bundle css

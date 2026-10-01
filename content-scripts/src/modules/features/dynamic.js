@@ -49,6 +49,7 @@ import {
 import { changeVideoResolutionOverlay } from "../options/videoResolutionOverlay";
 import { refreshPostFilters } from "../options/postFilters";
 import { refreshMindfulScrolling } from "../options/mindfulScrolling";
+import { refreshInfluenceWarnings } from "../options/influenceWarnings";
 import { changeWriterMode } from "../options/writerMode";
 import { addTypefullyComposerPlug, addTypefullyReplyPlug, saveCurrentReplyToLink, addTypefullySecurityAndAccountAccessPlug, addTypefullySchedulePlug } from "../typefullyPlugs";
 import hideRightSidebar from "../utilities/hideRightSidebar";
@@ -63,6 +64,7 @@ export const dynamicFeatures = {
     extractColorsAsRootVars();
     refreshPostFilters();
     refreshMindfulScrolling();
+    refreshInfluenceWarnings();
     const data = await getStorage([KeyHideViewCount, KeyHideGrokDrawer, KeyAiSlopButton, KeyVideoResolutionOverlay]);
 
     changeHideViewCounts(data[KeyHideViewCount]);

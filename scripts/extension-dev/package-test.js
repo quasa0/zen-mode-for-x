@@ -100,7 +100,7 @@ export async function testPackageRuntime({ browser: browserName = "helium", sign
     popup = await browser.page(`chrome-extension://${id}/index.html`);
     await check("release popup and browser-served assets match the package", async () => {
       await popup.wait("document.body.innerText.includes('Timeline') && !!document.getElementById('removePromotedPosts')");
-      const paths = ["dist/main.js", "css/main.css", "css/typefully.css"];
+      const paths = ["dist/main.js", "css/main.css", "css/typefully.css", "background.js", "influence-background.js", "influence-shared.js"];
       const actual = await popup.evaluate(`(async () => {
         const resources = ${JSON.stringify(paths)};
         const results = {};
@@ -123,6 +123,20 @@ export async function testPackageRuntime({ browser: browserName = "helium", sign
     });
     const storage = (values) => popup.send("Extensions.setStorageItems", { id, storageArea: "local", values });
     await storage({ ...defaultPreferences, extensionStatus: "off" });
+    await check("release Jev background uses private key storage and no development receipt", async () => {
+      assert.deepEqual(manifest.host_permissions, ["https://api.typesafe.ai/*"]);
+      const background = await readFile(join(report.package, "background.js"), "utf8");
+      assert.equal(background.includes("zen-dev:background-receipt"), false);
+      const admin = (message) => popup.evaluate(`new Promise(resolve => chrome.runtime.sendMessage(${JSON.stringify(message)}, resolve))`);
+      const status = await admin({ type: "zen-influence:status" });
+      assert.equal(status.ok, true);
+      assert.equal(status.configured, false);
+      const key = "apikey_package_fixture_only_0123456789abcdef";
+      assert.equal((await admin({ type: "zen-influence:configure", apiKey: key })).configured, true);
+      const local = await popup.evaluate("new Promise(resolve => chrome.storage.local.get(null,resolve))");
+      assert.equal(JSON.stringify(local).includes(key), false);
+      assert.equal((await admin({ type: "zen-influence:configure", clearKey: true })).configured, false);
+    });
     page = await browser.page();
     const fixture = await readFile(join(root, "scripts/extension-dev/fixtures/timeline.html"));
     listener = (event) => {

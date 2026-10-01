@@ -96,6 +96,7 @@ import { changeTypefullyEnhancementsButtons } from "../options/typefully";
 import { changeVideoResolutionOverlay } from "../options/videoResolutionOverlay";
 import { changePostFilters } from "../options/postFilters";
 import { changeMindfulScrolling } from "../options/mindfulScrolling";
+import { changeInfluenceWarnings } from "../options/influenceWarnings";
 import { changeWriterMode } from "../options/writerMode";
 
 export const staticFeatures = {
@@ -112,6 +113,7 @@ export const staticFeatures = {
     changeTrendsHomeTimeline(data[KeyTrendsHomeTimeline], data[KeyWriterMode]);
     changePostFilters(data);
     changeMindfulScrolling(data);
+    changeInfluenceWarnings(data);
     changeTopicsToFollow(data[KeyRemoveTopicsToFollow]);
     changeTimelineTabs(data[KeyRemoveTimelineTabs], data[KeyWriterMode]);
     changeAiSlopButton(data[KeyAiSlopButton]);

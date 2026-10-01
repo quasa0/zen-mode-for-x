@@ -8,6 +8,8 @@
     "bump-version": "node ./bump-version.js",
     "reload:chrome": "node ./reload-extension.js",
     "test:extension": "node scripts/extension-dev/index.js test",
+    "test:jev": "node scripts/extension-dev/jev-eval.js",
+    "test:influence": "node scripts/extension-dev/influence-service-test.js",
     "test:extension:package": "node scripts/extension-dev/package-test.js",
     "test:extension:profile": "node scripts/extension-dev/profile-test.js",
     "dev:extension": "node scripts/extension-dev/index.js dev",

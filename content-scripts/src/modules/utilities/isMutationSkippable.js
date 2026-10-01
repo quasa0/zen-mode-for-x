@@ -11,7 +11,9 @@ function canSkipRecord(mutation) {
   // Media can mount under a videoPlayer that already exists. It needs metadata listeners.
   if (nodes.some(hasVideo)) return false;
   if (target?.closest(COUNTS)) return true;
-  if (target?.closest('[data-testid="tweetText"], [data-testid^="tweetTextarea_"][role="textbox"]')) return true;
+  // Edited or recycled post text must invalidate cached influence warnings.
+  if (target?.closest('[data-testid="tweetText"]')) return false;
+  if (target?.closest('[data-testid^="tweetTextarea_"][role="textbox"]')) return true;
   if (!nodes.length) return false;
   return nodes.every((node) => {
     const element = asElement(node);

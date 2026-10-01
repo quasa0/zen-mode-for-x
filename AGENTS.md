@@ -23,6 +23,7 @@ Requires [classic yarn](https://classic.yarnpkg.com/lang/en/docs/install/).
 - `yarn package:extension` - Noninteractive Chrome/Firefox packaging with installed dependencies. No installs. Validates manifest resources and ZIP integrity before publishing local artifacts.
 - `yarn test:extension:package` - Smoke-tests the actual Chrome package in disposable Helium. Add `--browser chrome` for Chrome. Run after packaging.
 - `yarn test:extension` - Builds and tests the real extension in a disposable headless Helium profile. Add `--browser chrome` for Chrome.
+  - `--suite influence` verifies Jev warnings with mocked API responses and a fake key. Never use real credentials in fixture tests.
 - `yarn test:extension:profile` - Checks cookie persistence across normal quit and automated restart in a disposable profile. Opens a temporary normal window; do not run while the user is entering credentials.
 - `yarn dev:extension --headless --fixture` - Watches sources and verifies automated build, extension reload, and host-page refresh against the fixture.
 - `yarn inspect:extension --url https://x.com/home` - Captures fresh disabled/enabled pages and writes `comparison.html`. Holds the first Home feed response constant after a successful real request; later pagination stays live. Requires one-time sign-in with `yarn login:extension`.
@@ -81,7 +82,8 @@ Always refresh the loaded extension and its X page after extension changes. The 
 
 - **storage-keys.js** (root): Central registry of all feature keys and default preferences
   - All settings keys must be added to both `allSettingsKeys` array and `defaultPreferences` object
-  - Keys use format `Key[FeatureName]` (e.g., `KeySidebarLogo`)
+- Keys use format `Key[FeatureName]` (e.g., `KeySidebarLogo`)
+- Jev API keys belong only in extension-origin IndexedDB through `zen-influence:configure`. Never add credentials to preference keys, source, cache entries, exports, DOM, or logs. Background requests use the fixed TypeSafe origin. Chrome uses background ES modules; Firefox MV2 packaging bundles them to a classic IIFE with installed Rollup.
 
 ### Content Script Flow
 

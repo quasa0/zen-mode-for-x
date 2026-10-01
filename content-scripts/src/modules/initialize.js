@@ -32,7 +32,7 @@ const addMutationObserver = () => {
     childList: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ["data-testid", "aria-label"],
+    attributeFilter: ["data-testid", "aria-label", "href"],
     subtree: true,
   });
 };

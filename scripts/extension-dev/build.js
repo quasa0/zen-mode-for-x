@@ -5,6 +5,7 @@ import { cp, mkdir, readFile, readdir, rename, rm, writeFile, access } from "nod
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
+import { backgroundSources, copyBackground } from "./background.js";
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const cache = join(root, ".cache/extension-dev");
@@ -79,7 +80,7 @@ async function sourceSnapshot() {
   const paths = [
     ...await files(join(root, "content-scripts")), ...await files(join(root, "popup")),
     ...await files(join(root, "css")), ...await files(join(root, "fonts")), ...await files(join(root, "images")),
-    join(root, "storage-keys.js"), join(root, "extension-manifests.js"), join(root, "background.js"),
+    join(root, "storage-keys.js"), join(root, "extension-manifests.js"), ...backgroundSources.map(path => join(root, path)),
   ].sort();
   const entries = await Promise.all(paths.map(async path => [path, await readFile(path)]));
   const fromEntries = (filter = () => true) => {
@@ -87,11 +88,11 @@ async function sourceSnapshot() {
     for (const [path, data] of entries.filter(([path]) => filter(path))) { value.update(path); value.update(data); }
     return value.digest("hex");
   };
-  const settingsPath = join(root, "storage-keys.js");
+  const sharedPaths = [join(root, "storage-keys.js"), join(root, "influence-shared.js")];
   return {
     inputHash: fromEntries(),
-    contentHash: fromEntries(path => path === settingsPath || path.startsWith(join(root, "content-scripts") + "/")),
-    popupHash: fromEntries(path => path === settingsPath || path.startsWith(join(root, "popup") + "/")),
+    contentHash: fromEntries(path => sharedPaths.includes(path) || path.startsWith(join(root, "content-scripts") + "/")),
+    popupHash: fromEntries(path => sharedPaths.includes(path) || path.startsWith(join(root, "popup") + "/")),
   };
 }
 
@@ -131,10 +132,12 @@ export async function build({ force = false, signal, attempt = 0 } = {}) {
     for (const [source, target] of [["content-scripts/dist", "dist"], ["css", "css"], ["fonts", "fonts"], ["images", "images"]]) {
       await cp(join(root, source), join(staging, target), { recursive: true });
     }
-    await cp(join(root, "background.js"), join(staging, "background.js"));
+    await copyBackground(root, staging, MANIFEST_CHROME);
     const revision = hash(inputHash + await readFile(join(staging, "dist/main.js")) + randomUUID()).slice(0, 20);
     const content = await readFile(join(staging, "dist/main.js"), "utf8");
     await writeFile(join(staging, "dist/main.js"), content + `\n// Development build receipt.\ndocument.documentElement.dataset.zenDevBuild = ${JSON.stringify(revision)};\n`);
+    const background = await readFile(join(staging, "background.js"), "utf8");
+    await writeFile(join(staging, "background.js"), background + `\n// Development background receipt.\nchrome.runtime.onMessage.addListener((message, sender, respond) => {\n  if (message?.type === 'zen-dev:background-receipt' && sender.id === chrome.runtime.id) respond({revision:${JSON.stringify(revision)}});\n});\n`);
     await writeFile(join(staging, "manifest.json"), JSON.stringify(MANIFEST_CHROME, null, 2));
     for (const resource of ["index.html", "background.js", "css/main.css", "css/typefully.css", ...MANIFEST_CHROME.content_scripts.flatMap((config) => config.js)]) {
       await access(join(staging, resource));

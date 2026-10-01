@@ -1,3 +1,6 @@
+import { KeyInfluenceWarnings, KeyInfluenceSensitivity, KeyInfluenceDailyLimit } from "./influence-shared.js";
+export { KeyInfluenceWarnings, KeyInfluenceSensitivity, KeyInfluenceDailyLimit };
+
 export const KeyExtensionStatus = "extensionStatus";
 export const KeyListsButton = "listsButton";
 export const KeyCommunitiesButton = "communitiesButton";
@@ -70,6 +73,9 @@ export const allSettingsKeys = [
   KeyRemovePaidPartnershipPosts,
   KeyRemoveAiPosts,
   KeyMindfulScrolling,
+  KeyInfluenceWarnings,
+  KeyInfluenceSensitivity,
+  KeyInfluenceDailyLimit,
   KeyScrollLimitMinutes,
   KeyScrollReminderIntensity,
   KeyRemoveTopicsToFollow,
@@ -137,6 +143,9 @@ export const defaultPreferences = {
   [KeyRemovePaidPartnershipPosts]: "off",
   [KeyRemoveAiPosts]: "off",
   [KeyMindfulScrolling]: "off",
+  [KeyInfluenceWarnings]: "off",
+  [KeyInfluenceSensitivity]: 0.9,
+  [KeyInfluenceDailyLimit]: 200,
   [KeyScrollLimitMinutes]: 10,
   [KeyScrollReminderIntensity]: "gentle",
   [KeyRemoveTopicsToFollow]: "on",

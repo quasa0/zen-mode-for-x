@@ -23,6 +23,7 @@ try {
   if (hasStorageApi()) {
     chrome.storage.onChanged.addListener(async (changes, area) => {
       if (area !== "local") return;
+      if (!Object.keys(changes).some(key => allSettingsKeys.includes(key))) return;
       try {
         if (changes[KeyExtensionStatus]?.newValue !== changes[KeyExtensionStatus]?.oldValue) {
           window.location.reload();
