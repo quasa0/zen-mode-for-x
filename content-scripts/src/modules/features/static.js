@@ -48,6 +48,7 @@ import {
   KeyTypefullyGrowTab,
   KeyUnreadCountBadge,
   KeyVerifiedOrgsButton,
+  KeyVideoResolutionOverlay,
   KeyWriterMode,
   KeyXPremiumButton,
   KeyZenWriterModeButton,
@@ -94,6 +95,7 @@ import {
   changeTweetBorders,
 } from "../options/timeline";
 import { changeTypefullyEnhancementsButtons } from "../options/typefully";
+import { changeVideoResolutionOverlay } from "../options/videoResolutionOverlay";
 import { changeWriterMode } from "../options/writerMode";
 
 export const staticFeatures = {
@@ -103,6 +105,7 @@ export const staticFeatures = {
     changeTweetBorders(data[KeyRemoveTweetBorders]);
     changeStickyHeader(data[KeyStickyHeader]);
     changeWriterMode(data[KeyWriterMode]);
+    changeVideoResolutionOverlay(data[KeyVideoResolutionOverlay]);
     changeFollowingTimeline(data[KeyFollowingTimeline]);
     changeHideViewCounts(data[KeyHideViewCount]);
     changeRecentMedia(data[KeyRecentMedia]);

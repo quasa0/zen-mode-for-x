@@ -20,6 +20,7 @@ import {
   KeyTopicsButton,
   KeyTrendsHomeTimeline,
   KeyTypefullyGrowTab,
+  KeyVideoResolutionOverlay,
   KeyWriterMode,
   KeyXPremiumButton,
   KeyNavigationButtonsLabels,
@@ -45,6 +46,7 @@ import {
   changeTrendsHomeTimeline,
   enableGrokDrawerOnGrokButtonClick,
 } from "../options/timeline";
+import { changeVideoResolutionOverlay } from "../options/videoResolutionOverlay";
 import { changeWriterMode } from "../options/writerMode";
 import { addTypefullyComposerPlug, addTypefullyReplyPlug, saveCurrentReplyToLink, addTypefullySecurityAndAccountAccessPlug, addTypefullySchedulePlug } from "../typefullyPlugs";
 import hideRightSidebar from "../utilities/hideRightSidebar";
@@ -55,10 +57,11 @@ import throttle from "../utilities/throttle";
 
 export const dynamicFeatures = {
   general: async () => {
-    const data = await getStorage([KeyHideViewCount, KeyHideGrokDrawer, KeyAiSlopButton]);
+    const data = await getStorage([KeyHideViewCount, KeyHideGrokDrawer, KeyAiSlopButton, KeyVideoResolutionOverlay]);
 
     changeHideViewCounts(data[KeyHideViewCount]);
     changeAiSlopButton(data[KeyAiSlopButton]);
+    changeVideoResolutionOverlay(data[KeyVideoResolutionOverlay]);
     changeRecentMedia();
     hideRightSidebar();
     addSmallerSearchBarStyle();

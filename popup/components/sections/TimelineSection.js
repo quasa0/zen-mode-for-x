@@ -10,6 +10,7 @@ import {
   KeyRemoveTweetBorders,
   KeyStickyHeader,
   KeyTrendsHomeTimeline,
+  KeyVideoResolutionOverlay,
   KeyWriterMode,
 } from "../../../storage-keys";
 import useMounted from "../../utilities/hooks/useMounted";
@@ -50,6 +51,11 @@ const TimelineSection = () => {
             label="Recent Media on Profiles"
             description="Adds a compact recent-media panel next to profile timelines on desktop, making a profile's images easier to scan without opening the Media tab."
             storageKey={KeyRecentMedia}
+          />
+          <SwitchControl
+            label="Video Resolution Overlay"
+            description="Shows each video's intrinsic resolution and compact aspect ratio in a tiny 50%-transparent label at the top-right of the player."
+            storageKey={KeyVideoResolutionOverlay}
           />
           <Separator />
           <SectionLabel>Remove Distracting Elements</SectionLabel>

@@ -45,6 +45,7 @@ export const KeyCustomCss = "customCss";
 export const KeyHideViewCount = "hideViewCount";
 export const KeyHideGrokDrawer = "hideGrokDrawer";
 export const KeyAiSlopButton = "aiSlopButton";
+export const KeyVideoResolutionOverlay = "videoResolutionOverlay";
 
 export const allSettingsKeys = [
   // Extension Status
@@ -56,6 +57,7 @@ export const allSettingsKeys = [
   KeyRemoveTweetBorders,
   KeyStickyHeader,
   KeyWriterMode,
+  KeyVideoResolutionOverlay,
   KeyFollowingTimeline,
   KeyHideViewCount,
   KeyRecentMedia,
@@ -119,6 +121,7 @@ export const defaultPreferences = {
   [KeyRemoveTweetBorders]: "off",
   [KeyStickyHeader]: "on",
   [KeyWriterMode]: "off",
+  [KeyVideoResolutionOverlay]: "off",
   [KeyFollowingTimeline]: "off",
   [KeyHideViewCount]: "off",
   [KeyRecentMedia]: "off",
