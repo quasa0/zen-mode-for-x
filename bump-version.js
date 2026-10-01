@@ -3,15 +3,15 @@
 import fs from 'fs';
 import readline from 'readline';
 
-const BUNDLE_FILE = './bundle-extension.js';
+const BUNDLE_FILE = './extension-manifests.js';
 const XCODE_PROJECT = './bundle/safari/Minimal Twitter/Minimal Twitter.xcodeproj/project.pbxproj';
 
-// Read current version from bundle-extension.js
+// Read current version from extension-manifests.js
 function getCurrentVersion() {
   const content = fs.readFileSync(BUNDLE_FILE, 'utf8');
   const versionMatch = content.match(/version:\s*"(\d+\.\d+\.\d+)"/);
   if (!versionMatch) {
-    throw new Error('Could not find version in bundle-extension.js');
+    throw new Error('Could not find version in extension-manifests.js');
   }
   return versionMatch[1];
 }
@@ -42,7 +42,7 @@ function bumpVersion(version, type) {
   }
 }
 
-// Update version in bundle-extension.js
+// Update version in extension-manifests.js
 function updateVersion(newVersion) {
   const content = fs.readFileSync(BUNDLE_FILE, 'utf8');
   const updatedContent = content.replace(

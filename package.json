@@ -5,7 +5,11 @@
     "build": "node ./bundle-extension.js",
     "bundle": "node ./bundle-extension.js",
     "bump-version": "node ./bump-version.js",
-    "reload:chrome": "node ./reload-extension.js"
+    "reload:chrome": "node ./reload-extension.js",
+    "test:extension": "node scripts/extension-dev/index.js test",
+    "dev:extension": "node scripts/extension-dev/index.js dev",
+    "inspect:extension": "node scripts/extension-dev/index.js inspect",
+    "login:extension": "node scripts/extension-dev/index.js login"
   },
   "dependencies": {
     "fs-extra": "^11.1.0",

@@ -46,6 +46,19 @@ Requires classic Yarn.
 - `cd popup && yarn check:prettier` checks formatting.
 - `cd popup && yarn write:prettier` formats popup code.
 
+## Automated Development and Testing
+
+Use Node.js 22 or newer, classic Yarn, the existing project dependencies, and an installed Helium or Chrome. The runner checks whether the browser supports the required extension APIs. Helium is the default. Add `--browser chrome` to use Chrome.
+
+1. `yarn test:extension` builds the extension and runs a disposable browser profile. It tests the real popup, content script, storage updates, extension reload, and uninstall/reinstall against an X-shaped fixture. These checks do not verify the latest live X markup.
+2. `yarn dev:extension` watches source files, rebuilds, reloads the extension, and refreshes the host page. It opens a browser window by default. Use `yarn dev:extension --headless --fixture` for an unattended fixture session. Stop the watcher with **Ctrl+C**.
+3. `yarn login:extension` opens the dedicated development profile for a one-time X sign-in before live checks. Profiles are stored in `.cache/extension-dev/profiles/{browser}`. Later sessions reuse that profile.
+4. `yarn inspect:extension --url https://x.com/home` captures the page with the extension disabled and enabled. Screenshots, HTML, layout metrics, and browser errors are saved in the ignored `.cache/extension-dev/artifacts/` directory. Add `--eval-file /absolute/file.js` to run a DOM inspection expression.
+
+Add `--settings /absolute/settings.json` to load registered settings through the real extension storage API. One session runs at a time; a shared session lock serializes these commands.
+
+The automation uses Node.js built-ins and the browser's native CDP pipe. It installs no packages or browser binaries. It keeps the browser sandbox enabled and opens no debugging TCP port. The transport and extension lifecycle follow the audited official sources: [Puppeteer pipe transport](https://github.com/puppeteer/puppeteer/blob/main/packages/puppeteer-core/src/node/PipeTransport.ts), [Puppeteer extension APIs](https://github.com/puppeteer/puppeteer/blob/main/packages/puppeteer-core/src/cdp/Browser.ts), and [Chrome DevTools MCP reload implementation](https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/main/src/tools/extensions.ts).
+
 ## Manual Installation
 
 Build the extension, then load the browser-specific bundle:

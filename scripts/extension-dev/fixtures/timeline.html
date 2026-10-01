@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Extension timeline fixture</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: rgb(255, 255, 255);
+        color: rgb(15, 20, 25);
+        font: 16px system-ui, sans-serif;
+      }
+
+      main {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      [data-testid="primaryColumn"] {
+        width: 600px;
+        max-width: 600px;
+        border: 1px solid rgb(239, 243, 244);
+      }
+
+      [data-testid="sidebarColumn"] {
+        width: 300px;
+        padding: 16px;
+      }
+
+      h2,
+      article,
+      .video-cell,
+      .fixture-controls {
+        margin: 0;
+        padding: 16px;
+      }
+
+      article,
+      .video-cell {
+        min-height: 100px;
+        border-bottom: 1px solid rgb(239, 243, 244);
+      }
+
+      video {
+        display: block;
+        width: 100%;
+        height: 160px;
+        background: rgb(239, 243, 244);
+      }
+    </style>
+  </head>
+  <body>
+    <main role="main">
+      <div data-testid="primaryColumn">
+        <h2><span>Home</span></h2>
+        <section id="timeline" aria-label="Timeline fixture">
+          <article id="organic-post" data-testid="tweet" role="article">
+            <p>Organic post. This post must stay visible.</p>
+          </article>
+          <div data-testid="placementTracking">
+            <article id="promoted-post" data-testid="tweet" role="article">
+              <p>Promoted post. The ad setting controls this post.</p>
+            </article>
+          </div>
+          <div class="video-cell" data-testid="placementTracking">
+            <p>Organic video. Its tracking wrapper must stay visible.</p>
+            <video id="organic-video" aria-label="Organic video" controls preload="none"></video>
+          </div>
+        </section>
+        <div class="fixture-controls">
+          <button id="add-post" type="button">Insert organic post</button>
+        </div>
+      </div>
+      <aside data-testid="sidebarColumn" aria-label="Right sidebar">
+        <p>Right sidebar fixture</p>
+      </aside>
+    </main>
+    <script>
+      document.getElementById("add-post").addEventListener("click", () => {
+        if (document.getElementById("late-organic")) return;
+
+        const post = document.createElement("article");
+        post.id = "late-organic";
+        post.dataset.testid = "tweet";
+        post.setAttribute("role", "article");
+        post.textContent = "Organic post inserted after the extension starts.";
+        document.getElementById("timeline").appendChild(post);
+
+        const suggestions = document.createElement("section");
+        suggestions.id = "late-suggestions";
+        suggestions.setAttribute("aria-labelledby", "accessible-list-late");
+        const heading = document.createElement("h2");
+        heading.id = "accessible-list-late";
+        heading.textContent = "Who to follow";
+        suggestions.appendChild(heading);
+        document.getElementById("timeline").appendChild(suggestions);
+      });
+    </script>
+  </body>
+</html>

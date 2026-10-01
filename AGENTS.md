@@ -20,6 +20,9 @@ Repository: https://github.com/typefully/minimal-twitter
 Requires [classic yarn](https://classic.yarnpkg.com/lang/en/docs/install/).
 
 - `yarn build` or `yarn bundle` - Builds and bundles the extension for all browsers (prompts for browser choice)
+- `yarn test:extension` - Builds and tests the real extension in a disposable headless Helium profile. Add `--browser chrome` for Chrome.
+- `yarn dev:extension --headless --fixture` - Watches sources and verifies automated build, extension reload, and host-page refresh against the fixture.
+- `yarn inspect:extension --url https://x.com/home` - Captures a live page with the extension disabled and enabled. Requires one-time sign-in with `yarn login:extension`.
 - Builds both popup (Next.js) and content-scripts (Rollup) automatically
 - Creates bundled packages in `/bundle/` directory for Chrome, Firefox, and Safari
 
@@ -56,7 +59,7 @@ Then load the extension in your browser (see below).
 
 After making changes, refresh the extension in `chrome://extensions` to reload.
 
-Always refresh the loaded extension after finishing extension changes so the browser runs the latest built bundle.
+Always refresh the loaded extension and its X page after extension changes. The automated development runner performs both operations and verifies the current build receipt. Its dedicated profile does not change the extension installed in the user's normal browser profile. Stop agent-started watchers before finishing.
 
 ## Architecture
 
@@ -153,14 +156,14 @@ To add a new feature toggle:
 - Chrome: Manifest V3 with service worker background
 - Firefox: Manifest V2 with background scripts
 - Safari: Converted from Firefox build using xcrun safari-web-extension-converter
-- Manifests defined in `bundle-extension.js`
+- Manifests defined in `extension-manifests.js` and shared by release and development builds
 
 ## Releasing Updates
 
 ### Version Bump
 
 1. Run `yarn bump-version` (prompts for patch/minor/major). This automatically updates:
-   - `bundle-extension.js` - main version number
+   - `extension-manifests.js` - main version number
    - Xcode project (`project.pbxproj`) - MARKETING_VERSION and CURRENT_PROJECT_VERSION (build number incremented by 1)
 
 2. Run `yarn build` to create bundles for all browsers

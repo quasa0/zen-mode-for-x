@@ -239,7 +239,7 @@ const NavigationSection = () => {
             <Profile />
           </div>
           <p className="pb-4 text-xs leading-4 dark:text-gray-400 text-gray-500">
-            Each icon controls one shortcut in X's left navigation. Turn off destinations you never use; turn on any shortcut you want Minimal Twitter to keep visible.
+            Each icon controls one shortcut in X&apos;s left navigation. Turn off destinations you never use; turn on any shortcut you want Minimal Twitter to keep visible.
           </p>
           <div className="flex flex-col gap-y-4">
             <Separator />
