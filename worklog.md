@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-10-01 — X login limitation and clean login window
+
+- Continued the authorized sign-in after the user supplied the account username. The username confirmation stayed disabled despite genuine keyboard input. The automated browser reported `navigator.webdriver === true`; this proves automation is detectable, but does not establish the cause of X's login failure.
+- Disabled extension changes and retried the standalone login form once with the username. X displayed "We’ve temporarily limited your login. Please try again later." Stopped login attempts. No password was submitted and no authenticated session was established. X provided no retry interval.
+- Restored the prior extension setting, stopped the old login runner and browser, and verified both PIDs and the temporary inspector port were gone. Started the fixed `login:extension` command with the same dedicated profile, without CDP or enabled extensions. This normal login window remains open for the user under managed runner PID 18771; stop it with `kill -TERM 18771`. No packages, binaries, or browser security patches were installed. Sign-in in this normal window remains unverified.
+
 ## 2026-10-01 — Normal browser login and X account confirmation
 
 - Separated `login:extension` from extension builds and automation. Login now opens the existing dedicated profile in a normal headed browser with extensions disabled, a startup X URL, and no CDP connection, settings popup, or viewport override. Development and inspection still reuse this profile; fixture tests remain disposable. Updated README and agent instructions.
