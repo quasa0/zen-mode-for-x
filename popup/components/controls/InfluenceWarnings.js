@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { KeyInfluenceWarnings, KeyInfluenceSensitivity, KeyInfluenceDailyLimit } from "../../../storage-keys";
 import { InfluenceMessages } from "../../../influence-shared";
 import { useStorageValueState } from "../../utilities/useStorageKeyState";
-import SwitchControl from "../ui/SwitchControl";
+import { Segmented } from "../ui/Segmented";
+import StorageSwitch from "../ui/Switch";
 
 const errorLabels = {
   "not-configured": "Save a Jev API key to start scanning.",
@@ -63,6 +64,16 @@ export default function InfluenceWarnings() {
       refresh();
     } else setMessage("The key could not be saved. Check the key and try again.");
   };
+  const clearCache = async () => {
+    const result = await send(InfluenceMessages.clearCache);
+    if (!active.current) return;
+    setMessage(result.ok ? "Cached judgments cleared." : "Could not clear the cache.");
+    refresh();
+  };
+  const notice =
+    message ||
+    (enabled === "on" && status && !status.configured ? errorLabels["not-configured"] : errorLabels[status?.error]) ||
+    (enabled === "on" && status?.dailyUsed >= status?.dailyLimit ? errorLabels["daily-limit"] : "");
   const commitLimit = () => {
     const number = Number(limitInput);
     const value = limitInput !== "" && Number.isFinite(number) ? Math.min(2000, Math.max(1, Math.round(number))) : 200;
@@ -70,48 +81,62 @@ export default function InfluenceWarnings() {
     saveLimit(value);
   };
   return (
-    <div className="flex flex-col gap-y-3" id="influence-controls">
-      <SwitchControl
-        label="Influence Warnings"
-        description="Adds a small warning to posts with likely sales intent, FOMO pressure, or vague bait. Posts stay visible. Jev judges the text, not the author's motives."
+    <>
+      <StorageSwitch
         storageKey={KeyInfluenceWarnings}
+        label="Influence warnings"
+        description="Marks posts that read as a sales pitch, FOMO pressure or vague bait. Posts stay visible. Jev judges the text, not the author's motives."
       />
-      <p className="text-xs leading-4 text-gray-500 dark:text-gray-400">
-        Visible public post text, quoted text, and links go directly to TypeSafe. No backend. Results stay on this device for 30 days. Images and videos are not analyzed.
-      </p>
-      <form onSubmit={(event) => { event.preventDefault(); if (apiKey.trim() && !busy) configure(); }} className="flex flex-col gap-y-2">
-        <label htmlFor="jev-api-key" className="text-sm">Jev API key {status?.configured ? "· saved" : ""}</label>
-        <div className="flex gap-x-2">
-          <input
-            id="jev-api-key" type="password" autoComplete="off" spellCheck={false}
-            value={apiKey} onChange={(event) => setApiKey(event.target.value)}
-            placeholder={status?.configured ? "Replace saved key" : "Your TypeSafe API key"}
-            className="min-w-0 flex-1 rounded-md border border-gray-300 bg-transparent px-2 py-2 text-sm dark:border-gray-600"
-          />
-          <button type="submit" disabled={busy || !apiKey.trim()} className="rounded-md border border-gray-300 px-3 py-2 text-sm disabled:opacity-40 dark:border-gray-600">Save</button>
+      <div className="zm-sub" id="influence-controls">
+        <form onSubmit={(event) => { event.preventDefault(); if (apiKey.trim() && !busy) configure(); }} className="zm-group" style={{ gap: 8 }}>
+          <label htmlFor="jev-api-key" className="zm-field-label">
+            Jev API key{status?.configured ? " (saved)" : ""}
+          </label>
+          <div className="zm-inline">
+            <input
+              id="jev-api-key" type="password" autoComplete="off" spellCheck={false}
+              value={apiKey} onChange={(event) => setApiKey(event.target.value)}
+              placeholder={status?.configured ? "Replace saved key" : "Your TypeSafe API key"}
+              className="zm-input"
+            />
+            <button type="submit" disabled={busy || !apiKey.trim()} className="zm-button" data-variant="primary">Save</button>
+          </div>
+          <p className="zm-description">
+            The key stays private to this extension and is left out of settings exports.{" "}
+            {status?.configured && <button type="button" onClick={() => configure(true)} disabled={busy} className="zm-link">Remove saved key</button>}
+          </p>
+        </form>
+        <fieldset disabled={!thresholdLoaded || !limitLoaded} className="zm-group" style={{ gap: 12 }}>
+          <div className="zm-field">
+            <span className="zm-field-label">Threshold</span>
+            <Segmented
+              id={KeyInfluenceSensitivity}
+              label="Warning threshold"
+              value={[0.9, 0.8, 0.65].includes(threshold) ? threshold : 0.9}
+              onValueChange={saveThreshold}
+              segments={[
+                { value: 0.9, label: "Strict" },
+                { value: 0.8, label: "Balanced" },
+                { value: 0.65, label: "Sensitive" },
+              ]}
+            />
+          </div>
+          <div className="zm-field">
+            <label htmlFor={KeyInfluenceDailyLimit} className="zm-field-label">New scans per day</label>
+            <input id={KeyInfluenceDailyLimit} type="number" min="1" max="2000" step="1" value={limitInput} onChange={(event) => setLimitInput(event.target.value)} onBlur={commitLimit} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); commitLimit(); } }} className="zm-input" />
+          </div>
+        </fieldset>
+        <div className="zm-status">
+          <span>{status ? `${status.dailyUsed || 0} of ${status.dailyLimit || limit} scans today, ${status.cacheCount || 0} cached` : "Checking Jev status…"}</span>
+          <button type="button" onClick={clearCache} className="zm-link">Clear cache</button>
         </div>
-        {status?.configured && <button type="button" onClick={() => configure(true)} disabled={busy} className="self-start text-xs text-gray-500 underline dark:text-gray-400">Remove saved key</button>}
-        <p className="text-xs leading-4 text-gray-500 dark:text-gray-400">The key is private to this extension. Settings exports do not include it.</p>
-      </form>
-      <fieldset disabled={!thresholdLoaded || !limitLoaded} className="flex flex-col gap-y-2 disabled:opacity-40">
-        <div className="flex items-center justify-between gap-x-3">
-          <label htmlFor={KeyInfluenceSensitivity} className="text-sm">Warning threshold</label>
-          <select id={KeyInfluenceSensitivity} value={threshold} onChange={(event) => saveThreshold(Number(event.target.value))} className="rounded-md border border-gray-300 bg-transparent px-2 py-1 text-sm dark:border-gray-600">
-            <option value={0.9}>Strict · 90%</option><option value={0.8}>Balanced · 80%</option><option value={0.65}>Sensitive · 65%</option>
-          </select>
+        <div>
+          <p role="status" className="zm-description" style={{ color: "var(--text)" }}>{notice}</p>
+          <p className="zm-description">
+          Strict warns at 90%, Balanced at 80%, Sensitive at 65%. Visible post text, quoted text and links go directly to TypeSafe, with no server in between. Results stay on this device for 30 days and cached results do not use your daily limit, which resets at 00:00 UTC. Images and videos are not analyzed.
+          </p>
         </div>
-        <div className="flex items-center justify-between gap-x-3">
-          <label htmlFor={KeyInfluenceDailyLimit} className="text-sm">New scans per day</label>
-          <input id={KeyInfluenceDailyLimit} type="number" min="1" max="2000" step="1" value={limitInput} onChange={(event) => setLimitInput(event.target.value)} onBlur={commitLimit} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); commitLimit(); } }} className="w-20 rounded-md border border-gray-300 bg-transparent px-2 py-1 text-sm dark:border-gray-600" />
-        </div>
-      </fieldset>
-      <div className="flex items-center justify-between gap-x-3 text-xs text-gray-500 dark:text-gray-400">
-        <span>{status ? `${status.dailyUsed || 0}/${status.dailyLimit || limit} scans today · ${status.cacheCount || 0} cached` : "Checking Jev status…"}</span>
-        <button type="button" onClick={async () => { const result = await send(InfluenceMessages.clearCache); if (active.current) { setMessage(result.ok ? "Cached judgments cleared." : "Could not clear the cache."); refresh(); } }} className="underline">Clear cache</button>
       </div>
-      <p role="status" className="text-xs leading-4 text-gray-500 dark:text-gray-400">
-        {message || (enabled === "on" && status && !status.configured ? errorLabels["not-configured"] : errorLabels[status?.error]) || (enabled === "on" && status?.dailyUsed >= status?.dailyLimit ? errorLabels["daily-limit"] : "Higher thresholds show fewer warnings. Cached results do not use your daily limit. The day resets at 00:00 UTC.")}
-      </p>
-    </div>
+    </>
   );
 }

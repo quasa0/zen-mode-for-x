@@ -312,10 +312,10 @@ function reconcileGrokDrawer() {
   if (closed && grokOpenSeen) {
     grokOpenRequested = false;
     grokOpenSeen = false;
-    drawer.classList.remove("typefully-grok-drawer-enabled");
+    drawer.classList.remove("mt-grok-drawer-enabled");
     return;
   }
-  if (!drawer.classList.contains("typefully-grok-drawer-enabled")) drawer.classList.add("typefully-grok-drawer-enabled");
+  if (!drawer.classList.contains("mt-grok-drawer-enabled")) drawer.classList.add("mt-grok-drawer-enabled");
 }
 
 const grokClickListener = () => {
@@ -338,7 +338,7 @@ export const enableGrokDrawerOnGrokButtonClick = (setting) => {
     grokObservedHeader = undefined;
     grokOpenRequested = false;
     grokOpenSeen = false;
-    document.querySelectorAll(".typefully-grok-drawer-enabled").forEach((drawer) => drawer.classList.remove("typefully-grok-drawer-enabled"));
+    document.querySelectorAll(".mt-grok-drawer-enabled").forEach((drawer) => drawer.classList.remove("mt-grok-drawer-enabled"));
     return;
   }
   document.querySelectorAll(selectors.grokSvg).forEach((svg) => {

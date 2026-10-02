@@ -43,8 +43,6 @@ import {
   KeyTransparentSearch,
   KeyTrendsHomeTimeline,
   KeyTweetButton,
-  KeyTypefullyEnhancementsButtons,
-  KeyTypefullyGrowTab,
   KeyUnreadCountBadge,
   KeyVerifiedOrgsButton,
   KeyVideoResolutionOverlay,
@@ -58,7 +56,6 @@ import { changeFollowingAndFollowersCounts, changeLikeCount, changeReplyCount, c
 import changeHideViewCounts from "../options/hideViewCount";
 import { changeHideSearchBar, changeInterFont, changeTitleNotifications, changeTransparentSearchBar, changeTweetButton } from "../options/interface";
 import {
-  changeAnalyticsButton,
   changeArticlesButton,
   changeBookmarksButton,
   changeCommunitiesButton,
@@ -92,7 +89,6 @@ import {
   changeTrendsHomeTimeline,
   changeTweetBorders,
 } from "../options/timeline";
-import { changeTypefullyEnhancementsButtons } from "../options/typefully";
 import { changeVideoResolutionOverlay } from "../options/videoResolutionOverlay";
 import { changePostFilters } from "../options/postFilters";
 import { changeMindfulScrolling } from "../options/mindfulScrolling";
@@ -117,7 +113,6 @@ export const staticFeatures = {
     changeTopicsToFollow(data[KeyRemoveTopicsToFollow]);
     changeTimelineTabs(data[KeyRemoveTimelineTabs], data[KeyWriterMode]);
     changeAiSlopButton(data[KeyAiSlopButton]);
-    changeTypefullyEnhancementsButtons(data[KeyTypefullyEnhancementsButtons]);
     updateZenWriterModeButtonState(data[KeyWriterMode]);
     changeFollowingAndFollowersCounts(data[KeyFollowCount]);
     changeReplyCount(data[KeyReplyCount]);
@@ -153,7 +148,6 @@ export const staticFeatures = {
     changeXPremiumButton(data[KeyXPremiumButton]);
     changeGrokButton(data[KeyGrokButton]);
     changeVerifiedOrgsButton(data[KeyVerifiedOrgsButton]);
-    changeAnalyticsButton(data[KeyTypefullyGrowTab]);
     changeZenWriterModeButton(data[KeyZenWriterModeButton]);
   },
   advanced: (data) => {

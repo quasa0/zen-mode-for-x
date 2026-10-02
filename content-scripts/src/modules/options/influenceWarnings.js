@@ -100,11 +100,13 @@ function openPopover(state) {
   const shadow = host.attachShadow({ mode: "open" });
   shadow.innerHTML = `<style>
     :host { color:var(--main-text-color,rgb(15 20 25)); font:400 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-    section { padding:15px; border:1px solid var(--border-color,rgb(128 128 128 / .28)); border-radius:14px; background:var(--body-bg-color,#fff); box-shadow:0 8px 32px rgb(0 0 0 / .18); }
+    section { padding:15px; border-radius:14px; background:var(--body-bg-color,#fff); box-shadow:0 0 0 1px var(--border-color,rgb(128 128 128 / .28)), 0 8px 32px rgb(0 0 0 / .18); transition:opacity 150ms cubic-bezier(.23,1,.32,1), transform 150ms cubic-bezier(.23,1,.32,1); }
+    @starting-style { section { opacity:0; transform:scale(.97); } }
+    @media (prefers-reduced-motion:reduce) { section { transition:opacity 150ms ease; transform:none !important; } button { transition:none; } button:active { scale:1; } }
     header { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
     h2 { flex:1; font-size:13px; font-weight:650; margin:0; }
-    button { display:grid; place-items:center; width:28px; height:28px; margin:-5px -5px -5px 0; padding:0; border:0; border-radius:7px; color:inherit; background:transparent; cursor:pointer; font-size:20px; }
-    button:hover { background:rgb(128 128 128 / .12); } button:focus-visible { outline:2px solid #ca8421; outline-offset:2px; }
+    button { display:grid; place-items:center; width:28px; height:28px; margin:-5px -5px -5px 0; padding:0; border:0; border-radius:7px; color:inherit; background:transparent; cursor:pointer; font-size:20px; transition:scale 150ms cubic-bezier(.23,1,.32,1), background-color 150ms ease; }
+    button:active { scale:.96; } @media (hover:hover) and (pointer:fine) { button:hover { background:rgb(128 128 128 / .12); } } button:focus-visible { outline:2px solid #ca8421; outline-offset:2px; }
     ul { list-style:none; padding:0; margin:0; } li { display:flex; gap:10px; padding:4px 0; opacity:.65; } li[data-flagged] { opacity:1; color:color-mix(in srgb,var(--main-text-color,rgb(15 20 25)) 35%,#b47623); } li span:first-child { flex:1; } li span:last-child { font-variant-numeric:tabular-nums; }
     p { margin:10px 0 0; opacity:.7; font-size:11px; } .note { margin-top:8px; font-size:12px; opacity:.8; }
   </style><section role="dialog" aria-label="Potential influence patterns" data-testid="mt-influence-details"><header><h2>Potential influence patterns</h2><button type="button" aria-label="Close influence warning">×</button></header><ul></ul><p class="note">These estimates are not evidence of hidden intent and may be wrong.</p><p data-model></p><p>Text only · images, videos and linked pages not checked</p></section>`;
@@ -145,8 +147,9 @@ function render(state) {
     host.style.cssText = "display:inline-flex;flex:0 0 auto;vertical-align:middle;width:24px;height:24px;margin-inline-start:2px;align-self:center;";
     const shadow = host.attachShadow({ mode: "open" });
     shadow.innerHTML = `<style>
-      :host { color:#bd7a21; } button { width:24px; height:24px; display:grid; place-items:center; padding:0; border:0; border-radius:50%; color:inherit; background:rgb(202 132 33 / .1); cursor:pointer; }
-      button:hover { background:rgb(202 132 33 / .2); } button:focus-visible { outline:2px solid currentColor; outline-offset:2px; } svg { width:13px; height:13px; }
+      :host { color:#bd7a21; } button { width:24px; height:24px; display:grid; place-items:center; padding:0; border:0; border-radius:50%; color:inherit; background:rgb(202 132 33 / .1); cursor:pointer; transition:scale 150ms cubic-bezier(.23,1,.32,1), background-color 150ms ease; }
+      button:active { scale:.96; } @media (hover:hover) and (pointer:fine) { button:hover { background:rgb(202 132 33 / .2); } }
+      @media (prefers-reduced-motion:reduce) { button { transition:none; } button:active { scale:1; } } button:focus-visible { outline:2px solid currentColor; outline-offset:2px; } svg { width:13px; height:13px; }
       @media (prefers-contrast:more) { button { background:transparent; outline:1px solid currentColor; } }
     </style><button type="button" data-testid="mt-influence-button" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M10 5.8v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></button>`;
     state.host = host;

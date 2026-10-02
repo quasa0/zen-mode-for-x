@@ -9,7 +9,7 @@ export async function runSettingsAudit({page,popup,storage,check,loadFixture}) {
       URL.createObjectURL = blob => {window.__settingsAuditBlob=blob;return window.__settingsNativeCreateObjectURL(blob);};
       window.__settingsPreventDownload = event => {if(event.target.closest('a[download]'))event.preventDefault();};
       document.addEventListener('click',window.__settingsPreventDownload,true);
-      [...document.querySelectorAll('button')].find(button=>button.textContent === 'Export Settings').click(); true`);
+      [...document.querySelectorAll('button')].find(button=>button.textContent === 'Export settings').click(); true`);
     try {
       await popup.wait("!!window.__settingsAuditBlob");
       const payload = await popup.evaluate("window.__settingsAuditBlob.text().then(JSON.parse)");

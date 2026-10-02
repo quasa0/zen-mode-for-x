@@ -4,7 +4,7 @@ import fs from 'fs';
 import readline from 'readline';
 
 const BUNDLE_FILE = './extension-manifests.js';
-const XCODE_PROJECT = './bundle/safari/Minimal Twitter/Minimal Twitter.xcodeproj/project.pbxproj';
+const XCODE_PROJECT = './bundle/safari/Zen mode for X/Zen mode for X.xcodeproj/project.pbxproj';
 
 // Read current version from extension-manifests.js
 function getCurrentVersion() {

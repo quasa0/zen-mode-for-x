@@ -592,7 +592,7 @@ const handleAiSlopClick = async (event) => {
     collapseReportedTweet(tweet);
   } catch (error) {
     if (!context.signal.aborted) {
-      console.warn("Minimal Twitter: AI Slop action failed", error);
+      console.warn("Zen mode for X: AI Slop action failed", error);
       setButtonState(button, "error", "failed");
     }
   } finally {

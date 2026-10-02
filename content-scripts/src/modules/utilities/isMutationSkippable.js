@@ -1,4 +1,4 @@
-const OWNED_UI = '[id^="mt-"], [id^="typefully-"], .mt-tooltip, .mt-videoResolutionOverlay, .mt-sidebar-button, .mt-writer-mode-composer-button';
+const OWNED_UI = '[id^="mt-"], .mt-tooltip, .mt-videoResolutionOverlay, .mt-sidebar-button, .mt-writer-mode-composer-button';
 const COUNTS = '[data-testid="like"], [data-testid="unlike"], [data-testid="retweet"], [data-testid="unretweet"], [data-testid="reply"]';
 
 const asElement = (node) => node?.nodeType === 1 ? node : node?.parentElement;

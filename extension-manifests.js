@@ -1,13 +1,13 @@
 const manifest = {
-  name: "Minimal Theme for Twitter / X",
-  short_name: "Minimal Twitter",
-  description: "Refine and declutter the 𝕏/Twitter web experience.",
+  name: "Zen mode for X",
+  short_name: "Zen mode",
+  description: "A calmer X. Hide ads, counts and clutter, set a scrolling limit, and write without the feed.",
   version: "6.4.1",
   icons: {
-    16: "images/MinimalTwitterIcon16.png",
-    32: "images/MinimalTwitterIcon32.png",
-    48: "images/MinimalTwitterIcon48.png",
-    128: "images/MinimalTwitterIcon128.png",
+    16: "images/icon-16.png",
+    32: "images/icon-32.png",
+    48: "images/icon-48.png",
+    128: "images/icon-128.png",
   },
   permissions: ["storage"],
   options_ui: {
@@ -39,7 +39,6 @@ export const MANIFEST_CHROME = {
     {
       resources: [
         "css/main.css",
-        "css/typefully.css",
         "fonts/inter-subset.woff2",
       ],
       matches: [
@@ -51,11 +50,11 @@ export const MANIFEST_CHROME = {
   ],
   action: {
     default_icon: {
-      16: "images/MinimalTwitterIcon16.png",
-      32: "images/MinimalTwitterIcon32.png",
-      48: "images/MinimalTwitterIcon48.png",
+      16: "images/icon-16.png",
+      32: "images/icon-32.png",
+      48: "images/icon-48.png",
     },
-    default_title: "Minimal Twitter",
+    default_title: "Zen mode for X",
     default_popup: "index.html",
   },
 };
@@ -66,7 +65,7 @@ export const MANIFEST_FIREFOX = {
   permissions: [...manifest.permissions, "https://api.typesafe.ai/*"],
   browser_specific_settings: {
     gecko: {
-      id: "{e7476172-097c-4b77-b56e-f56a894adca9}",
+      id: "zen-mode-for-x@quasa0.com",
     },
   },
   background: {
@@ -86,16 +85,15 @@ export const MANIFEST_FIREFOX = {
   ],
   web_accessible_resources: [
     "css/main.css",
-    "css/typefully.css",
     "fonts/inter-subset.woff2",
   ],
   browser_action: {
     default_icon: {
-      16: "images/MinimalTwitterIcon16.png",
-      32: "images/MinimalTwitterIcon32.png",
-      48: "images/MinimalTwitterIcon48.png",
+      16: "images/icon-16.png",
+      32: "images/icon-32.png",
+      48: "images/icon-48.png",
     },
-    default_title: "Minimal Twitter",
+    default_title: "Zen mode for X",
     default_popup: "index.html",
   },
 };

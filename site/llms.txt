@@ -1,0 +1,10 @@
+# Zen mode for X
+
+> A free, MIT-licensed browser extension that makes X calmer. It hides promoted posts, engagement counts and suggestions, sets a scrolling limit, and clears the page while you write. Chromium browsers are tested; Firefox and Safari builds are unverified.
+
+- [Download for Chromium browsers](https://zen.quasa0.com/downloads/zen-mode-for-x-chrome.zip): Unzip, open chrome://extensions, enable Developer mode, choose Load unpacked, select the folder, then reload X.
+- [Release manifest](https://zen.quasa0.com/release.json): Version, file sizes, and SHA-256 checksums.
+- [Source](https://github.com/quasa0/zen-mode-for-x): Content scripts, settings popup, and real-browser tests.
+- [Privacy policy](https://github.com/quasa0/zen-mode-for-x/blob/main/PRIVACY.md): No server and no analytics. Influence warnings are opt-in and use the user's own TypeSafe API key.
+
+The extension has no account and no backend. It is not affiliated with X Corp.

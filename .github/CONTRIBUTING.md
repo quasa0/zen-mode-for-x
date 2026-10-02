@@ -1,6 +1,6 @@
 # Contributing
 
-If you have a good idea, [start a discussion](https://github.com/typefully/minimal-twitter/discussions/new?category=ideas). For bug reports and usability issues, [submit an issue](https://github.com/typefully/minimal-twitter/issues/new). We do accept PRs but note that it is more likely to be accepted with an associated discussion or issue.
+If you have a good idea, [open an issue](https://github.com/quasa0/zen-mode-for-x/issues/new). For bug reports and usability issues, [submit an issue](https://github.com/quasa0/zen-mode-for-x/issues/new). We do accept PRs but note that it is more likely to be accepted with an associated discussion or issue.
 
 ## Development / Building / Bundling the Extension
 
@@ -70,19 +70,19 @@ yarn bundle # Runs the `bundle-extension.js` script
 				<li>Open <code>chrome://extensions</code> or <code>edge://extensions</code></li>
         <li>Turn on the <strong>Developer mode</strong> toggle</li>
 				<li>Click on the <strong>Load unpacked</strong> button</li>
-				<li>Select the folder <code>minimal-twitter/extension</code></li>
+				<li>Select the folder <code>zen-mode-for-x/bundle/chrome</code></li>
 			</ol>
 		</td>
 		<td width="33.33%">
 			<ol>
 				<li>Open <code>about:debugging#/runtime/this-firefox</code></li>
 				<li>Click on the <strong>Load Temporary Add-on...</strong> button</li>
-				<li>Select the file <code>minimal-twitter/extension/manifest.json</code></li>
+				<li>Select the file <code>zen-mode-for-x/bundle/firefox/manifest.json</code></li>
 			</ol>
 		</td>
       <td width="33.33%">
 			<ol>
-				<li>Open <code>bundle/safari/Minimal Theme for Twitter/Minimal Theme for Twitter.xcodeproj</code>
+				<li>Open <code>bundle/safari/Zen mode for X/Zen mode for X.xcodeproj</code>
         </li>
 				<li>Click the Play button in Xcode ("start the active scheme")</li>
 				<li><a href="https://developer.apple.com/documentation/safariservices/safari_web_extensions/running_your_safari_web_extension#3744467">Configure Safari in macOS to run unsigned extensions</a></li>

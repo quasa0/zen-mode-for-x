@@ -149,7 +149,7 @@ export const changeRecentMedia = async (setting) => {
     #${PANEL_ID} .mt-profile-photos-heading:hover { text-decoration: underline; }
     #${PANEL_ID} .mt-profile-photos-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
     #${PANEL_ID} .mt-profile-photos-grid a { display: block; aspect-ratio: 1; overflow: hidden; }
-    #${PANEL_ID} img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    #${PANEL_ID} img { display: block; width: 100%; height: 100%; object-fit: cover; outline: 1px solid rgb(128 128 128 / 0.18); outline-offset: -1px; }
     #${PANEL_ID} p { grid-column: 1 / -1; margin: 0; padding: 0 12px 12px; font-size: 14px; }
     #${PANEL_ID} a:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
     @media (max-width: 1264px) { #${PANEL_ID} { display: none; } }

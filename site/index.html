@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Zen mode for X · The same X, far less noise</title>
+    <meta
+      name="description"
+      content="A free, open-source browser extension for X. Hide promoted posts, counts and suggestions, set a scrolling limit, and write without the feed."
+    />
+    <link rel="canonical" href="https://zen.quasa0.com/" />
+    <meta property="og:title" content="Zen mode for X · The same X, far less noise" />
+    <meta
+      property="og:description"
+      content="Hide promoted posts, counts and suggestions. Set a scrolling limit. Write without the feed. Free and open source."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://zen.quasa0.com/" />
+    <meta property="og:image" content="https://zen.quasa0.com/assets/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/geist.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="header">
+      <div class="header-inner">
+        <a href="/" class="brand" aria-label="Zen mode for X home"
+          ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.66 6.34A8 8 0 1 0 20 12" /></svg>Zen mode for X</a
+        >
+        <nav aria-label="Main navigation">
+          <a class="nav-link" href="#what-it-does">What it does</a>
+          <a class="nav-link" href="#privacy">Privacy</a>
+          <a class="button small secondary" href="https://github.com/quasa0/zen-mode-for-x"
+            >GitHub <span aria-hidden="true">↗</span></a
+          >
+          <a class="button small" href="#install">Install</a>
+        </nav>
+      </div>
+    </header>
+    <main id="main">
+      <section class="hero hatch" aria-labelledby="hero-title">
+        <div class="hero-content">
+          <h1 id="hero-title">The same X.<br />Far less noise.</h1>
+          <p class="lede">
+            A browser extension that hides promoted posts, counts and suggestions, sets a limit on scrolling, and
+            clears the page when you write.
+          </p>
+          <div class="actions">
+            <a class="button" href="/downloads/zen-mode-for-x-chrome.zip" download
+              ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4" /></svg
+              >Download for Chrome</a
+            >
+            <a class="button secondary" href="#install">How to install</a>
+          </div>
+          <p class="hero-note">Free and open source · Chrome, Edge, Brave and Arc · No account, no analytics</p>
+        </div>
+        <div class="strip">
+          <span>Hides</span><strong>Promoted posts</strong><strong>Like counts</strong
+          ><strong>Follow suggestions</strong><strong>Grok</strong><span>and more, one switch each.</span>
+        </div>
+      </section>
+      <div class="outer-frame hatch-soft">
+        <div class="frame">
+          <section class="demo hatch" aria-label="Settings preview">
+            <figure class="screens">
+              <div class="screens-row">
+                <picture>
+                  <source srcset="/assets/popup-timeline-dark.png" media="(prefers-color-scheme: dark)" />
+                  <img
+                    src="/assets/popup-timeline-light.png"
+                    width="800"
+                    height="1200"
+                    alt="The Timeline tab: a timeline width slider, then switches to hide promoted posts, paid partnerships, posts made with AI, follow suggestions and engagement counts."
+                    fetchpriority="high"
+                  />
+                </picture>
+                <picture>
+                  <source srcset="/assets/popup-focus-dark.png" media="(prefers-color-scheme: dark)" />
+                  <img
+                    src="/assets/popup-focus-light.png"
+                    width="800"
+                    height="1200"
+                    alt="The Focus tab: Zen writer mode, Mindful scrolling with a ten-minute limit, and Influence warnings."
+                  />
+                </picture>
+                <picture>
+                  <source srcset="/assets/popup-navigation-dark.png" media="(prefers-color-scheme: dark)" />
+                  <img
+                    src="/assets/popup-navigation-light.png"
+                    width="800"
+                    height="1200"
+                    alt="The Navigation tab: a grid of sidebar shortcuts, with Home, Search, Notifications and Messages kept and Premium, Jobs and Articles hidden."
+                  />
+                </picture>
+              </div>
+              <figcaption>The actual settings. Light and dark follow your system.</figcaption>
+            </figure>
+          </section>
+          <section id="what-it-does" aria-labelledby="what-title">
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true"
+                ><svg viewBox="0 0 24 24"><path d="M17.66 6.34A8 8 0 1 0 20 12" /></svg
+              ></span>
+              <h2 id="what-title">Take out what pulls at you.</h2>
+              <p>X stays X. Your posts, your follows and your timeline are untouched.<br />The extension only changes what your browser shows.</p>
+            </div>
+            <div class="card-grid hatch">
+              <article class="card">
+                <span class="step">01 / Hide</span>
+                <h3>A quieter feed</h3>
+                <p>
+                  Promoted posts, paid partnerships, follow suggestions and the numbers under every post. Each one is
+                  its own switch.
+                </p>
+                <div class="illustration switch-list" aria-hidden="true">
+                  <span>Promoted posts <i class="on"></i></span><span>Like counts <i class="on"></i></span
+                  ><span>Follow suggestions <i class="on"></i></span>
+                </div>
+              </article>
+              <article class="card">
+                <span class="step">02 / Limit</span>
+                <h3>A limit you can see</h3>
+                <p>
+                  Set a scrolling limit from 1 to 120 minutes. The window edges turn amber near it and red at it. A
+                  two-minute break resets the clock.
+                </p>
+                <div class="illustration limit" aria-hidden="true">
+                  <div><b>8 of 10 minutes</b><span>Amber at 80%</span></div>
+                  <div class="meter"><span></span></div>
+                  <small>Pauses while you write or sit idle</small>
+                </div>
+              </article>
+              <article class="card">
+                <span class="step">03 / Write</span>
+                <h3>A page for writing</h3>
+                <p>
+                  Zen writer mode clears the timeline around the composer. You get the native editor and nothing else.
+                </p>
+                <div class="illustration composer" aria-hidden="true">
+                  <span></span><span></span><span></span><b>Post</b>
+                </div>
+              </article>
+            </div>
+          </section>
+          <section id="privacy" class="details-grid" aria-label="Details">
+            <div>
+              <h3>Nothing leaves your browser</h3>
+              <p>
+                No server, no account, no analytics. Settings live in your browser's local storage and export to a JSON
+                file when you want a backup.
+              </p>
+            </div>
+            <div>
+              <h3>Hidden, never deleted</h3>
+              <p>
+                The extension hides X's own elements with CSS. Turn a switch off, or pause the whole extension from the
+                header, and X returns to its default interface.
+              </p>
+            </div>
+            <div>
+              <h3>Warnings you opt into</h3>
+              <p>
+                Influence warnings mark posts that read as a sales pitch, FOMO pressure or vague bait. They are off by
+                default and need your own TypeSafe API key. When on, visible post text goes directly to TypeSafe.
+              </p>
+              <a href="https://github.com/quasa0/zen-mode-for-x/blob/main/PRIVACY.md"
+                >Read the privacy policy <span aria-hidden="true">↗</span></a
+              >
+            </div>
+            <div>
+              <h3>Open all the way down</h3>
+              <p>
+                MIT licensed. The sidebar, the search bar, the timeline width, the font and your own CSS are all
+                adjustable, and every line that does it is on GitHub.
+              </p>
+              <a href="https://github.com/quasa0/zen-mode-for-x">Read the source <span aria-hidden="true">↗</span></a>
+            </div>
+          </section>
+          <section id="install" aria-labelledby="install-title">
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true"
+                ><svg viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4" /></svg
+              ></span>
+              <h2 id="install-title">Install in a minute.</h2>
+              <p>The extension is not in the Chrome Web Store yet.<br />You load it yourself from a folder.</p>
+            </div>
+            <div class="install-content">
+              <div class="download-panel">
+                <h3>Zen mode for X <span>6.4.1</span></h3>
+                <p>For Chrome, Edge, Brave, Arc and other Chromium browsers.</p>
+                <a class="button" href="/downloads/zen-mode-for-x-chrome.zip" download
+                  ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4" /></svg
+                  >Download the ZIP</a
+                >
+                <div class="download-alternatives">
+                  <a href="/release.json">Checksums</a>
+                  <a href="https://github.com/quasa0/zen-mode-for-x#development">Build from source <span aria-hidden="true">↗</span></a>
+                </div>
+              </div>
+              <ol class="install-steps">
+                <li>
+                  <h3>Unzip the download</h3>
+                  <p>Keep the folder somewhere permanent. The browser loads the extension from it every time.</p>
+                </li>
+                <li>
+                  <h3>Open the extensions page</h3>
+                  <p>Go to <code>chrome://extensions</code> and turn on <strong>Developer mode</strong>.</p>
+                </li>
+                <li>
+                  <h3>Load the folder</h3>
+                  <p>Click <strong>Load unpacked</strong> and choose the unzipped folder.</p>
+                </li>
+                <li>
+                  <h3>Refresh X</h3>
+                  <p>Reload any open X tab. Click the extension's icon in the toolbar to change settings.</p>
+                </li>
+              </ol>
+            </div>
+          </section>
+          <section class="faq" aria-labelledby="faq-title">
+            <div class="section-heading">
+              <h2 id="faq-title">Questions</h2>
+            </div>
+            <div class="faq-list">
+              <details>
+                <summary>Does it read my posts or messages?</summary>
+                <p>
+                  It runs on x.com pages in your browser to hide and restyle elements. It sends nothing anywhere unless
+                  you turn on Influence warnings, which send visible public post text to TypeSafe with your own key.
+                  Private messages and drafts are never sent.
+                </p>
+              </details>
+              <details>
+                <summary>Does it block every ad?</summary>
+                <p>
+                  It hides posts that X labels as promoted, and it has separate switches for Paid partnership and Made
+                  with AI labels. X changes its markup often, so a new ad format can appear until the extension is
+                  updated.
+                </p>
+              </details>
+              <details>
+                <summary>Does it work in Firefox or Safari?</summary>
+                <p>
+                  The source builds a Firefox package and a Safari Xcode project. Only the Chromium build is tested in
+                  a real browser on every change, so treat the other two as unverified.
+                </p>
+              </details>
+              <details>
+                <summary>Why does Chrome warn about Developer mode?</summary>
+                <p>
+                  Chrome shows that notice for any extension loaded from a folder instead of the Web Store. The code it
+                  loads is the ZIP you downloaded, and its SHA-256 checksum is published in
+                  <a href="/release.json">release.json</a>.
+                </p>
+              </details>
+              <details>
+                <summary>Where did it come from?</summary>
+                <p>
+                  It started as a fork of Minimal Twitter, an MIT-licensed extension, and has since been rebuilt around
+                  current X markup with new filters, scrolling limits, a redesigned settings popup and real-browser
+                  tests.
+                </p>
+              </details>
+            </div>
+          </section>
+          <div class="closing-wrap">
+            <section class="closing dot-grid" aria-labelledby="closing-title">
+              <h2 id="closing-title">Open X.<br />See only what you came for.</h2>
+              <a class="button inverse" href="/downloads/zen-mode-for-x-chrome.zip" download>Download for Chrome</a>
+            </section>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer>
+      <div class="footer-inner">
+        <div>
+          <span class="brand"
+            ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.66 6.34A8 8 0 1 0 20 12" /></svg>Zen mode for X</span
+          >
+          <p>Made by quasa0. Free software, under MIT.</p>
+          <p>Independent project. Not affiliated with X Corp.</p>
+        </div>
+        <nav aria-label="Footer">
+          <a href="https://github.com/quasa0/zen-mode-for-x">GitHub <span aria-hidden="true">↗</span></a>
+          <a href="https://github.com/quasa0/zen-mode-for-x/blob/main/PRIVACY.md">Privacy <span aria-hidden="true">↗</span></a>
+          <a href="https://github.com/quasa0/zen-mode-for-x/blob/main/LICENSE">License <span aria-hidden="true">↗</span></a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

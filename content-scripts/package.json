@@ -1,5 +1,5 @@
 {
-  "name": "minimal-twitter-content-scripts",
+  "name": "zen-mode-for-x-content-scripts",
   "source": "src/index.js",
   "main": "dist/main.js",
   "scripts": {

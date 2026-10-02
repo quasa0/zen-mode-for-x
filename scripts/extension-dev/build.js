@@ -139,7 +139,7 @@ export async function build({ force = false, signal, attempt = 0 } = {}) {
     const background = await readFile(join(staging, "background.js"), "utf8");
     await writeFile(join(staging, "background.js"), background + `\n// Development background receipt.\nchrome.runtime.onMessage.addListener((message, sender, respond) => {\n  if (message?.type === 'zen-dev:background-receipt' && sender.id === chrome.runtime.id) respond({revision:${JSON.stringify(revision)}});\n});\n`);
     await writeFile(join(staging, "manifest.json"), JSON.stringify(MANIFEST_CHROME, null, 2));
-    for (const resource of ["index.html", "background.js", "css/main.css", "css/typefully.css", ...MANIFEST_CHROME.content_scripts.flatMap((config) => config.js)]) {
+    for (const resource of ["index.html", "background.js", "css/main.css", ...MANIFEST_CHROME.content_scripts.flatMap((config) => config.js)]) {
       await access(join(staging, resource));
     }
     const info = { revision, inputHash, contentHash, popupHash, rawContentSha256, popupOutputHash, builtAt: new Date().toISOString(), contentSha256: hash(await readFile(join(staging, "dist/main.js"))) };

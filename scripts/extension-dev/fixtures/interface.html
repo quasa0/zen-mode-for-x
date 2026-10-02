@@ -55,9 +55,7 @@
         </div>
         <form id="primary-search" role="search"><input data-testid="SearchBox_Search_Input" placeholder="Search" aria-label="Timeline search" /></form>
         <section id="posts"></section>
-        <div id="account-access" data-testid="accountAccessScreen"><h2>Security and account access</h2></div>
         <button id="show-modal" type="button">Open synthetic composer</button>
-        <button id="show-schedule" type="button">Open synthetic schedule</button>
         <button id="mutate-fixture" type="button">Mutate fixture</button>
       </div>
       <aside data-testid="sidebarColumn">
@@ -145,11 +143,6 @@
         root.innerHTML += '<div contenteditable="true" role="textbox" data-testid="tweetTextarea_0"><div><div class="public-DraftStyleDefault-block"><span data-text="true">Modal </span><span><span data-text="true">@mention</span></span><span data-text="true"> stays together.</span></div><div class="public-DraftStyleDefault-block"><span data-text="true">Second line.</span></div><div class="public-DraftStyleDefault-block"><span><br data-text="true" /></span></div><div class="public-DraftStyleDefault-block"><span data-text="true">After blank line.</span></div></div></div><div contenteditable="true" role="textbox" data-testid="tweetTextarea_1"><div><div class="public-DraftStyleDefault-block"><span data-text="true">Second thread post.</span></div></div></div><div data-testid="toolBar"><button data-testid="tweetButton">Post</button></div>';
         action(root, 'Close', () => clearLayers(), { 'aria-label': 'Close' }); return root;
       };
-      fixture.openSchedule = () => {
-        const root = dialog('Schedule'); root.id = 'synthetic-schedule';
-        const native = action(root, 'Confirm', () => { fixture.nativePostActions++; }, { 'data-testid': 'scheduledConfirmationPrimaryAction' }); native.id = 'native-schedule-confirm';
-        return root;
-      };
       document.addEventListener('click', event => {
         const caret = event.target.closest('[data-testid="caret"]');
         if (caret && !caret.closest('[data-testid="quoteTweet"]')) menu(caret.closest('[data-testid="tweet"]'));
@@ -158,7 +151,6 @@
       });
       document.addEventListener('keydown', event => { if (event.key === 'Escape') clearLayers(); });
       document.getElementById('show-modal').addEventListener('click', fixture.openComposer);
-      document.getElementById('show-schedule').addEventListener('click', fixture.openSchedule);
       document.getElementById('mutate-fixture').addEventListener('click', fixture.tick);
       document.querySelector('[data-testid="tweetButtonInline"]').addEventListener('click', () => { fixture.nativePostActions++; });
     </script>

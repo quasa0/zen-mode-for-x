@@ -185,9 +185,9 @@ export async function runTimelineAudit({ page, popup, storage, check, loadFixtur
       await page.evaluate("document.getElementById('post-grok').click(); const d = document.createElement('div'); d.id = 'grok-drawer'; d.dataset.testid = 'GrokDrawer'; d.innerHTML = '<div data-testid=GrokDrawerHeader><h2>Lazy Grok</h2><button>Close</button></div>'; document.getElementById('drawer-mount').appendChild(d)");
       await page.wait(visible("grok-drawer"));
       await storage({ hideGrokDrawer: "off" });
-      await page.wait("!document.getElementById('grok-drawer').classList.contains('typefully-grok-drawer-enabled')");
+      await page.wait("!document.getElementById('grok-drawer').classList.contains('mt-grok-drawer-enabled')");
       await page.evaluate("document.getElementById('post-grok').click()");
-      assert.equal(await page.evaluate("document.getElementById('grok-drawer').classList.contains('typefully-grok-drawer-enabled')"), false);
+      assert.equal(await page.evaluate("document.getElementById('grok-drawer').classList.contains('mt-grok-drawer-enabled')"), false);
     });
 
     await check("writer focus finds the inline composer preserves native controls and allows long-draft scrolling", async () => {
@@ -238,7 +238,6 @@ export async function runTimelineAudit({ page, popup, storage, check, loadFixtur
       assert.equal(await page.evaluate(visible("count-post")), true);
       assert.equal(await page.evaluate("document.querySelector('#inline-composer [role=textbox]').textContent.includes('A long draft')"), true);
       assert.equal(await page.evaluate("document.title"), "Timeline feature audit / X");
-      assert.equal(await page.evaluate("document.querySelectorAll('#typefully-writermode-link').length"), 0);
       await storage({ writerMode: "on" });
       await page.wait("document.body.classList.contains('mt-writer-mode')");
       await page.evaluate("fixture.route('/fixture')");

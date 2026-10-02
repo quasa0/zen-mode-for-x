@@ -37,7 +37,7 @@ try {
         await applyStaticFeatures(await getStorage(allSettingsKeys));
         runDynamicFeatures();
       } catch (error) {
-        console.error("Zen for X settings update failed", error);
+        console.error("Zen mode for X settings update failed", error);
       }
     });
   }
@@ -54,5 +54,5 @@ const init = async () => {
 };
 
 init().catch((error) => {
-  console.error("Zen for X initialization failed", error);
+  console.error("Zen mode for X initialization failed", error);
 });

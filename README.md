@@ -1,6 +1,10 @@
-# Zen Mode for X
+<img src=".github/assets/icon.png" width="64" height="64" alt="">
 
-A browser extension for Chrome, Firefox, and Safari that makes X/Twitter quieter, cleaner, and easier to use with fewer visual distractions.
+# Zen mode for X
+
+A browser extension for Chrome, Firefox, and Safari that makes X quieter, cleaner, and easier to use with fewer visual distractions.
+
+Website: [zen.quasa0.com](https://zen.quasa0.com)
 
 ## Features
 
@@ -34,7 +38,7 @@ A browser extension for Chrome, Firefox, and Safari that makes X/Twitter quieter
 - Zen Writer Mode shortcut: adds a left-nav shortcut for quickly entering or leaving Writer Mode on X.
 - Settings portability: exports and imports all extension settings from the popup.
 - Stronger feed cleanup: hides more recommendation modules, including in-feed "Who to follow" suggestions.
-- Clearer popup controls: adds more descriptive settings text and a cleaner control layout.
+- Redesigned settings: five tabs (Timeline, Focus, Navigation, Interface, Advanced) with real switches, short descriptions, and light and dark themes.
 - Dev reload helper: reloads the Chrome extension during development with `yarn reload:chrome <extension-id>`.
 - Reload robustness: handles extension reloads and invalidated storage contexts more gracefully.
 - Title/favicon cleanup: strips repeated title counts and avoids old Twitter favicon fallbacks.
@@ -64,11 +68,11 @@ Use Node.js 22 or newer, classic Yarn, the existing project dependencies, and an
 
 Add `--settings /absolute/settings.json` to load registered settings through the real extension storage API. One session runs at a time; a shared session lock serializes these commands.
 
-**Influence Warnings** is off by default. Save your own TypeSafe key in Timeline settings and enable the control. A small amber icon marks possible sales pitches, FOMO pressure, or vague bait. Click it to see separate estimated probabilities. It does not hide posts or claim to know an author's motives. Strict (90%) is the default; lower thresholds show more warnings.
+**Influence Warnings** is off by default. Save your own TypeSafe key in the Focus tab and enable the control. A small amber icon marks possible sales pitches, FOMO pressure, or vague bait. Click it to see separate estimated probabilities. It does not hide posts or claim to know an author's motives. Strict (90%) is the default; lower thresholds show more warnings.
 
 The extension calls [Jev's HTTP API](https://docs.typesafe.ai/api) directly from its private background process. No application backend is involved. The key stays in extension-origin IndexedDB and never enters content scripts, settings exports, post markup, or result caches. Only visible public post text, quoted text, and link paths are sent. Link destinations, private messages, drafts, images, videos, cookies, and profile histories are not sent. Link query strings are removed. Jev is [text-only and strongest in English](https://docs.typesafe.ai/models).
 
-Positive and negative results are cached locally for 30 days, up to 1,000 post URLs. A content hash and model/question revision invalidate edited or expanded posts. Threshold changes reuse stored probabilities. At most two requests run together. The default limit is 200 new scans per UTC day across all tabs; cached results remain available after the limit. Service failures leave posts visible and produce no warning. Timeline settings show usage and let you remove the key or clear the cache.
+Positive and negative results are cached locally for 30 days, up to 1,000 post URLs. A content hash and model/question revision invalidate edited or expanded posts. Threshold changes reuse stored probabilities. At most two requests run together. The default limit is 200 new scans per UTC day across all tabs; cached results remain available after the limit. Service failures leave posts visible and produce no warning. The Focus tab shows usage and lets you remove the key or clear the cache.
 
 For a live test, `inspect:extension` and `audit:extension` accept `--jev-key-file /absolute/private-file`. The file must have mode 0600. The runner saves the key through the extension's own configuration message without printing it. Use `--suite influence` with `test:extension` for deterministic API, cache, badge, and lifecycle checks in a disposable profile; those checks use a fake key and mocked Jev responses.
 
@@ -88,7 +92,7 @@ The live audit temporarily pauses Helium's bundled uBlock Origin for **x.com onl
 
 The automation uses Node.js built-ins and the browser's native CDP pipe. It installs no packages or browser binaries. It keeps the browser sandbox enabled and opens no debugging TCP port. It enables ordinary Developer Mode only in its dedicated or disposable profile. It verifies executing content and background receipts after each build. If CDP installation retains a stale registered worker, it performs a runtime reload and verifies the new receipt. This preserves extension preferences and its private IndexedDB key. Developer Mode is required for this normal reload path; Chromium otherwise [disables unpacked extensions](https://github.com/chromium/chromium/blob/154.0.8037.92/extensions/browser/disable_reason.h). The transport and extension lifecycle follow the audited official sources: [Puppeteer pipe transport](https://github.com/puppeteer/puppeteer/blob/main/packages/puppeteer-core/src/node/PipeTransport.ts), [Puppeteer extension APIs](https://github.com/puppeteer/puppeteer/blob/main/packages/puppeteer-core/src/cdp/Browser.ts), and [Chrome DevTools MCP reload implementation](https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/main/src/tools/extensions.ts).
 
-Native ad removal is independent of the opt-in **Paid Partnership Posts** and **Made with AI Posts** controls. Filters use platform labels, exclude user text and quotes, and hide native cells without deleting X nodes. X documents [paid partnerships](https://help.x.com/en/rules-and-policies/paid-partnerships-policy.html) separately from ads and [AI disclosures](https://help.x.com/en/business-and-advertising/brand-safety/industry-leadership-and-partnerships). Reports distinguish observed live labels from fixture-only coverage. Unknown or changed markup still requires new evidence and a repair.
+Native ad removal is independent of the opt-in **Paid partnerships** and **Made with AI** controls. Filters use platform labels, exclude user text and quotes, and hide native cells without deleting X nodes. X documents [paid partnerships](https://help.x.com/en/rules-and-policies/paid-partnerships-policy.html) separately from ads and [AI disclosures](https://help.x.com/en/business-and-advertising/brand-safety/industry-leadership-and-partnerships). Reports distinguish observed live labels from fixture-only coverage. Unknown or changed markup still requires new evidence and a repair.
 
 **Mindful Scrolling** is off by default. Choose a limit from 1 to 120 minutes and a Gentle or Clear cue. Trusted feed scrolling starts the tab-local clock. Writing, hidden tabs, fullscreen media, chat and settings pause it. A two-minute break resets it. Amber begins at 80% of the limit; red begins at the limit. The cue supports a break or five-minute snooze, stays clear of native controls, and respects reduced motion. It keeps no browsing history and sends no data. Its passive edge cues take inspiration from the local Onward app. Runtime CSS comes from the extension bundle, so tests and releases use the same styles.
 
@@ -98,8 +102,16 @@ Build the extension, then load the browser-specific bundle:
 
 - Chrome/Edge: load `bundle/chrome` from `chrome://extensions` with Developer mode enabled.
 - Firefox: load `bundle/firefox/manifest.json` from `about:debugging#/runtime/this-firefox`.
-- Safari: open the generated Xcode project under `bundle/safari` and run it from Xcode.
+- Safari: open `bundle/safari/Zen mode for X/Zen mode for X.xcodeproj`, select your own development team, and run it from Xcode.
+
+## Brand assets
+
+`assets/icon.svg` is the source mark. `python3 scripts/brand/render-icons.py` renders every extension, macOS, and Safari icon from the same geometry. The settings UI and website use [Geist](https://vercel.com/font) under the SIL Open Font License; see `fonts/Geist-LICENSE.txt`.
+
+## Website
+
+`site/` is a static page with no build step, published at [zen.quasa0.com](https://zen.quasa0.com). `scripts/site/check.py` validates it offline. `scripts/site/deploy.sh` deploys it to Vercel and then runs `scripts/site/smoke.py` against the public domain. Deploy only with the owner's authorization.
 
 ## License
 
-MIT. See [LICENSE](./LICENSE).
+MIT. See [LICENSE](./LICENSE). This project started as a fork of Minimal Twitter (MIT, Copyright (c) 2022 Mailbrew Inc.); the license notice is preserved.

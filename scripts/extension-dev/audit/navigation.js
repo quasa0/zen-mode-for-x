@@ -15,7 +15,6 @@ const controls = [
   ["articles", "#nav-articles", "not present in live navigation"],
   ["topicsButton", '.mt-sidebar-button[aria-label="Topics"]', "not present in live navigation; injected when enabled"],
   ["verifiedOrgsButton", "#nav-verified-orgs", "not present in live navigation"],
-  ["typefullyGrowTab", '.mt-sidebar-button[aria-label="Analytics"]', "injected"],
   ["zenWriterModeButton", '.mt-sidebar-button[aria-label="Zen Writer Mode"]', "injected"],
   ["profileButton", "#nav-profile", "present"],
 ];
@@ -52,18 +51,16 @@ export async function runNavigationAudit({ page, popup, storage, check, loadFixt
   }
 
   await check("injected navigation is scoped, accessible and idempotent", async () => {
-    assert.equal(await page.evaluate("document.querySelectorAll('#primary-navigation > .mt-sidebar-button').length"), 5);
+    assert.equal(await page.evaluate("document.querySelectorAll('#primary-navigation > .mt-sidebar-button').length"), 4);
     assert.equal(await page.evaluate("window.fixtureOutsideNodes.every(node => node.isConnected && node.parentElement.id === 'outside-navigation')"), true);
     assert.equal(await page.evaluate("document.querySelectorAll('#outside-navigation > .mt-sidebar-button').length"), 0);
     assert.equal(await page.evaluate("document.querySelector('#nav-premium') === window.fixtureNativePremium"), true);
     assert.equal(await page.evaluate(`${button("Lists")}.getAttribute('href')`), "/fixture_account/lists");
     assert.equal(await page.evaluate(`${button("Communities")}.getAttribute('href')`), "/fixture_account/communities");
     assert.equal(await page.evaluate(`${button("Topics")}.getAttribute('href')`), "/fixture_account/topics");
-    for (const name of ["Analytics", "Zen Writer Mode"]) {
-      assert.equal(await page.evaluate(`${button(name)}.tagName`), "BUTTON");
-      assert.equal(await page.evaluate(`${button(name)}.type`), "button");
-      assert.equal(await page.evaluate(`${button(name)}.tabIndex`), 0);
-    }
+    assert.equal(await page.evaluate(`${button("Zen Writer Mode")}.tagName`), "BUTTON");
+    assert.equal(await page.evaluate(`${button("Zen Writer Mode")}.type`), "button");
+    assert.equal(await page.evaluate(`${button("Zen Writer Mode")}.tabIndex`), 0);
     await page.evaluate(`window.fixtureInjectedNodes = [...document.querySelectorAll('#primary-navigation > .mt-sidebar-button')]; ${triggerMutation}`);
     // A later storage update waits for the dynamic feature pass to settle.
     await storage({ unreadCountBadge: "on" });
@@ -208,16 +205,7 @@ export async function runNavigationAudit({ page, popup, storage, check, loadFixt
     await page.wait("document.querySelectorAll('#primary-navigation > .mt-sidebar-button[aria-label=Lists]').length === 1");
   });
 
-  await check("Analytics tolerates a missing profile URL", async () => {
-    await page.evaluate("window.fixtureAnalyticsOpened = 0; window.open = () => { window.fixtureAnalyticsOpened++; }; document.getElementById('nav-profile').removeAttribute('href')");
-    await page.evaluate(`${button("Analytics")}.click()`);
-    await page.evaluate("document.getElementById('nav-profile').remove()");
-    await page.evaluate(triggerMutation);
-    await page.evaluate(`${button("Analytics")}.click()`);
-    assert.equal(await page.evaluate("window.fixtureAnalyticsOpened"), 0);
-  });
-
-  // Reload the fixture to restore the profile and the full native label template.
+  // Reload the fixture to restore the full native label template.
   await loadFixture("navigation.html");
   await page.wait(button("Zen Writer Mode"));
   await check("Search and current Chat routes keep navigation in the document flow", async () => {

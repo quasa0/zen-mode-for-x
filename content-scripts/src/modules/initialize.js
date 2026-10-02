@@ -17,7 +17,6 @@ import { getStorage } from "./utilities/storage";
 
 export const addStylesheets = async () => {
   addStyleSheet("main", chrome.runtime.getURL("css/main.css"));
-  addStyleSheet("typefully", chrome.runtime.getURL("css/typefully.css"));
 
   // Bundled styles keep this fork's tested behavior consistent offline and in releases.
 };

@@ -24,7 +24,6 @@ selectors.sidebarLinks = {
   lists: `${selectors.leftSidebar} a[href*="lists"][role="link"][aria-label]`,
   xPremium: `${selectors.leftSidebar} a[href*="premium"][role="link"][aria-label]`,
   verifiedOrgs: `${selectors.leftSidebar} a[href*="verified-orgs"][role="link"][aria-label]`,
-  analytics: `${selectors.leftSidebar} .mt-sidebar-button[aria-label="Analytics"]`,
   zenWriterMode: `${selectors.leftSidebar} .mt-sidebar-button[aria-label="Zen Writer Mode"]`,
   grok: `${selectors.leftSidebar} a[href*="grok"][role="link"][aria-label]`,
 };
@@ -63,7 +62,5 @@ selectors.modalBackground = `${selectors.modalExternalWrapper} > div:empty`;
 selectors.modalWrapper = `div[aria-labelledby="modal-header"][role="dialog"]`;
 selectors.modalUi = `${selectors.modalWrapper} > div`;
 selectors.tweetButton = `[data-testid="SideNav_NewTweet_Button"]`;
-// Settings
-selectors.securityAndAccountAccess = `[data-testid="accountAccessScreen"]`;
 
 export default selectors;

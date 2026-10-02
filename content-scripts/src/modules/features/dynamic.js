@@ -4,7 +4,6 @@
  * - Navigation buttons
  * - Timeline customizations
  * - View counts
- * - Typefully integration
  * Applied via MutationObserver on relevant DOM changes
  */
 
@@ -19,7 +18,6 @@ import {
   KeyRemoveTopicsToFollow,
   KeyTopicsButton,
   KeyTrendsHomeTimeline,
-  KeyTypefullyGrowTab,
   KeyVideoResolutionOverlay,
   KeyWriterMode,
   KeyXPremiumButton,
@@ -29,7 +27,6 @@ import {
 import { changeAiSlopButton } from "../options/aiSlopButton";
 import changeHideViewCounts from "../options/hideViewCount";
 import {
-  addAnalyticsButton,
   addCommunitiesButton,
   addListsButton,
   addTopicsButton,
@@ -51,7 +48,6 @@ import { refreshPostFilters } from "../options/postFilters";
 import { refreshMindfulScrolling } from "../options/mindfulScrolling";
 import { refreshInfluenceWarnings } from "../options/influenceWarnings";
 import { changeWriterMode } from "../options/writerMode";
-import { addTypefullyComposerPlug, addTypefullyReplyPlug, saveCurrentReplyToLink, addTypefullySecurityAndAccountAccessPlug, addTypefullySchedulePlug } from "../typefullyPlugs";
 import hideRightSidebar from "../utilities/hideRightSidebar";
 import { updateLeftSidebarPositioning } from "../utilities/leftSidebarPosition";
 import { addSmallerSearchBarStyle } from "../utilities/other-styles";
@@ -76,18 +72,11 @@ export const dynamicFeatures = {
     updateLeftSidebarPositioning();
     enableGrokDrawerOnGrokButtonClick(data[KeyHideGrokDrawer]);
   },
-  typefullyPlugs: () => {
-    saveCurrentReplyToLink();
-    addTypefullyReplyPlug();
-    addTypefullyComposerPlug();
-    addTypefullySecurityAndAccountAccessPlug();
-    addTypefullySchedulePlug();
-  },
   navigation: (data) => {
     changeNavigationButtonsLabels(data[KeyNavigationButtonsLabels]);
   },
   sidebarButtons: async (writerMode) => {
-    const data = await getStorage([KeyListsButton, KeyCommunitiesButton, KeyTopicsButton, KeyXPremiumButton, KeyTypefullyGrowTab, KeyZenWriterModeButton]);
+    const data = await getStorage([KeyListsButton, KeyCommunitiesButton, KeyTopicsButton, KeyXPremiumButton, KeyZenWriterModeButton]);
 
     if (!data) return;
 
@@ -95,7 +84,6 @@ export const dynamicFeatures = {
     if (data[KeyCommunitiesButton] === "on") addCommunitiesButton();
     if (data[KeyTopicsButton] === "on") addTopicsButton();
     if (data[KeyXPremiumButton] === "on") addXPremiumButton();
-    if (data[KeyTypefullyGrowTab] === "on") addAnalyticsButton();
     if (data[KeyZenWriterModeButton] === "on") addZenWriterModeButton(writerMode);
   },
   writerMode: async (data) => {
@@ -122,7 +110,6 @@ const applyDynamicFeatures = async () => {
   ]);
 
   if (data) {
-    dynamicFeatures.typefullyPlugs();
     await dynamicFeatures.sidebarButtons(data[KeyWriterMode]);
     await dynamicFeatures.writerMode(data);
     dynamicFeatures.navigation(data);
@@ -145,7 +132,7 @@ export const runDynamicFeatures = throttle(async () => {
       await applyDynamicFeatures();
     }
   } catch (error) {
-    console.error("Zen for X dynamic update failed", error);
+    console.error("Zen mode for X dynamic update failed", error);
   } finally {
     applying = false;
   }

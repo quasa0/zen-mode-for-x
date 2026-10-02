@@ -1,0 +1,19 @@
+{
+  "name": "Zen mode for X",
+  "version": "6.4.1",
+  "license": "MIT",
+  "assets": [
+    {
+      "name": "zen-mode-for-x-chrome.zip",
+      "url": "https://zen.quasa0.com/downloads/zen-mode-for-x-chrome.zip",
+      "bytes": 617478,
+      "sha256": "230d60274883067fcef6a4afdac110e8d6ddffc39cd65780c832bcbc93aa5393"
+    },
+    {
+      "name": "zen-mode-for-x-firefox.zip",
+      "url": "https://zen.quasa0.com/downloads/zen-mode-for-x-firefox.zip",
+      "bytes": 616624,
+      "sha256": "e6c8263e4a6b6814007c9e563b437fe29ed00bd6ee5b99c8b663a3047a24e870"
+    }
+  ]
+}

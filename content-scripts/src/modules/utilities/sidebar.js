@@ -10,11 +10,6 @@ const localPath = (href) => {
   } catch {}
 };
 
-export const getSidebarScreenName = () => {
-  const profileHref = document.querySelector(selectors.sidebarLinks.profile)?.getAttribute("href");
-  return localPath(profileHref)?.match(/^\/([^/]+)\/?$/)?.[1];
-};
-
 export const addSidebarButton = ({ name, href, userHref, onClick, svgAsset, nativeSelector }) => {
   const profileNode = document.querySelector(`${selectors.leftSidebarLinks} > a[role="link"][data-testid="AppTabBar_Profile_Link"]`);
   const navigation = profileNode?.parentElement;

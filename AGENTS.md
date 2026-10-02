@@ -4,9 +4,10 @@ This file provides guidance to coding agents when working with code in this repo
 
 ## Project Overview
 
-Open-source browser extension for Chrome, Firefox, and Safari that customizes the Twitter/X.com interface. Built by Typefully to provide a minimal, focused Twitter experience with customizable UI elements.
+Zen mode for X: an open-source browser extension for Chrome, Firefox, and Safari that makes the X.com interface calmer and customizable. It began as a fork of Minimal Twitter (MIT); keep the LICENSE notice. The product has no Typefully features, links, or branding. Do not reintroduce any.
 
-Repository: https://github.com/typefully/minimal-twitter
+Repository: https://github.com/quasa0/zen-mode-for-x
+Website: https://zen.quasa0.com (static source in `site/`)
 
 ## Git Workflow
 
@@ -105,7 +106,7 @@ Always refresh the loaded extension and its X page after extension changes. The 
 
 - **Dynamic features** (content-scripts/src/modules/features/dynamic.js):
   - Reapplied on DOM mutations via MutationObserver
-  - Examples: writer mode, view counts, Typefully integration buttons
+  - Examples: writer mode, view counts, influence warnings
   - Throttled to run max every 50ms
 
 **Feature implementation files** (content-scripts/src/modules/options/):
@@ -119,9 +120,13 @@ Always refresh the loaded extension and its X page after extension changes. The 
 
 **Next.js app** (popup/):
 
-- `components/sections/`: Settings sections (TimelineSection, NavigationSection, etc.)
-- `components/ui/`: Reusable UI components (switches, checkboxes, sliders)
-- Uses Radix UI primitives and Stitches for styling
+- `components/Popup.js`: shell with the header, the master switch, and five tabs. Every panel stays mounted; inactive panels are `hidden`.
+- `components/panels/`: one file per tab (TimelinePanel, FocusPanel, NavigationPanel, InterfacePanel, AdvancedPanel)
+- `components/controls/`: compound controls (width slider, hidden counts, scroll limits, influence warnings, CSS editor, backup)
+- `components/ui/`: primitives (`Switch`, `Segmented`, `Group`)
+- `styles/globals.css`: the whole design system as plain CSS with `zm-` classes and tokens. Geist is bundled from `/fonts`. No Tailwind, no Stitches.
+- Each switch uses its storage key as the element `id` and exposes `aria-checked`; the browser tests depend on both.
+- Design rules: monochrome, sentence case, no cards around groups, no em dashes, color only for state. Animate only `transform`, `opacity`, `scale`, and color at 150 ms or less; press scale is `0.96`.
 - Settings are saved to chrome.storage and synced to content scripts
 
 ## Adding a New Feature
@@ -145,16 +150,16 @@ To add a new feature toggle:
    - If dynamic: Add to `dynamicFeatures` in `content-scripts/src/modules/features/dynamic.js`
    - Import the key from storage-keys.js
 
-4. **Add UI control** in appropriate section in `popup/components/sections/`:
+4. **Add UI control** in the appropriate panel in `popup/components/panels/`:
 
    - Import the key from storage-keys.js
-   - Add a toggle/switch/checkbox component that reads/writes to storage
+   - Add `<StorageSwitch storageKey={Key} label="Sentence case" description="One short sentence." />`
 
 5. **SVG assets**: If new icons are needed, add to `content-scripts/src/modules/svgAssets.js`
 
 ## CSS and Styling
 
-- Main styles: `/css/main.css` and `/css/typefully.css`
+- Main in-page styles: `/css/main.css`
 - Development and release builds load only bundled CSS. Do not fetch upstream runtime styles that can override the tested fork.
 - Content scripts inject styles dynamically via `addStyleSheet()` and `addStyles()` utilities
 
@@ -184,30 +189,6 @@ To add a new feature toggle:
 
 4. Submit bundles to browser stores (Chrome Web Store, Firefox Add-ons, App Store via Xcode)
 
-### Update Screen Behavior
+### Install and update behavior
 
-Controlled in `background.js`. By default, the welcome page only opens on fresh installs.
-
-To show an update screen for major releases, modify `background.js`:
-
-```js
-// Show welcome page on both install AND update
-if (object.reason !== "install" && object.reason !== "update") {
-  return;
-}
-
-const targetUrl = `https://typefully.com/minimal-twitter/welcome${
-  object.reason === "update" ? "?updated=true" : ""
-}`;
-```
-
-To disable update screen (default):
-
-```js
-// Only show welcome page on fresh install
-if (object.reason !== "install") {
-  return;
-}
-
-const targetUrl = `https://typefully.com/minimal-twitter/welcome`;
-```
+`background.js` opens no page on install or update. Do not add a welcome or update tab.

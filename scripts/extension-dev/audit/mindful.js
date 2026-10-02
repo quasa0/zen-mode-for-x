@@ -124,6 +124,7 @@ export async function runMindfulAudit({ page, popup, storage, check, loadFixture
     };
 
     await check("mindful popup persists numeric limits and reminder intensity", async () => {
+      await popup.evaluate("document.getElementById('tab-focus').click()");
       await popup.wait("document.getElementById('scrollLimitMinutes') && !document.getElementById('scrollLimitMinutes').disabled");
       const editMinutes = async (value) => {
         await popup.send("Page.bringToFront");
@@ -138,7 +139,7 @@ export async function runMindfulAudit({ page, popup, storage, check, loadFixture
       assert.equal(saved.data.scrollLimitMinutes, 2);
       await editMinutes(121);
       await popup.wait("document.getElementById('scrollLimitMinutes').value === '120'");
-      await popup.evaluate("(() => { const select = document.getElementById('scrollReminderIntensity'); select.value = 'clear'; select.dispatchEvent(new Event('change', {bubbles:true})); })()");
+      await popup.evaluate("document.querySelector('#scrollReminderIntensity [data-value=clear]').click(); true");
       await page.wait(`${host}.dataset.intensity === 'clear'`);
       await storage({ scrollLimitMinutes: 1, scrollReminderIntensity: "gentle", mindfulScrolling: "off" });
       await page.wait(`${host} === null`);

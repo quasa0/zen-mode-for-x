@@ -7,7 +7,7 @@ if (manifest.update_url) {
 } else if (!token || !/^\d+-[a-z0-9]+$/.test(token)) {
   document.body.textContent = "Dev reload requires the local reload helper.";
 } else {
-  document.body.textContent = "Reloading Minimal Twitter...";
+  document.body.textContent = "Reloading Zen mode for X...";
   chrome.runtime.reload();
   window.close();
   setTimeout(() => window.close(), 100);

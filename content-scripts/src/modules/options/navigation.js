@@ -2,8 +2,7 @@ import { KeyWriterMode } from "../../../../storage-keys";
 import selectors from "../../selectors";
 import svgAssets from "../svgAssets";
 import addStyles, { removeStyles } from "../utilities/addStyles";
-import { createTypefullyUrl } from "../utilities/createTypefullyUrl";
-import { addSidebarButton, getSidebarScreenName } from "../utilities/sidebar";
+import { addSidebarButton } from "../utilities/sidebar";
 import { getStorage, setStorage } from "../utilities/storage";
 
 // Utilities
@@ -58,7 +57,6 @@ export const changeGrokButton = (state) => changeSidebarSetting("grok", state);
 export const changeTopicsButton = (state) => changeSidebarSetting("topics", state, addTopicsButton);
 export const changeCommunitiesButton = (state) => changeSidebarSetting("communities", state, addCommunitiesButton);
 export const changeListsButton = (state) => changeSidebarSetting("lists", state, addListsButton);
-export const changeAnalyticsButton = (state) => changeSidebarSetting("analytics", state, addAnalyticsButton);
 export const changeZenWriterModeButton = (state) => changeSidebarSetting("zenWriterMode", state, addZenWriterModeButton);
 
 export const addZenWriterModeButton = (writerMode) => {
@@ -92,25 +90,6 @@ export const addXPremiumButton = () => {
     href: "/settings/premium",
     svgAsset: svgAssets.xPremium.normal,
     nativeSelector: selectors.sidebarLinks.xPremium,
-  });
-};
-
-export const addAnalyticsButton = () => {
-  addSidebarButton({
-    name: "Analytics",
-    svgAsset: svgAssets.grow.normal,
-    onClick: () => {
-      const screenName = getSidebarScreenName();
-      if (!screenName) return;
-      const url = createTypefullyUrl(
-        {
-          utm_content: "sidebar-grow-button",
-          "mt-screen-name": screenName,
-        },
-        "grow",
-      );
-      window.open(url, "_blank", "noopener");
-    },
   });
 };
 
@@ -179,7 +158,7 @@ const addStyleToShowLabelsOnHover = () => {
     ${selectors.accountSwitcherLabel} {
       display: inline-block;
       opacity: 0;
-      transition: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+      transition: opacity 0.2s cubic-bezier(0.23, 1, 0.32, 1);
     }
     `,
   );
@@ -264,11 +243,11 @@ export const changeNavigationCenter = (navigationCenter) => {
 export const hideGrokDrawer = (state) => {
   switch (state) {
     case "on":
-      // If typefully-grok-drawer-enabled class is present because we added it when grok button from a post is clicked.
+      // If mt-grok-drawer-enabled class is present because we added it when grok button from a post is clicked.
       // We don't want to hide the drawer in this case.
       addStyles(
         "grokDrawer",
-        `${selectors.grokDrawer}:not(.typefully-grok-drawer-enabled) {
+        `${selectors.grokDrawer}:not(.mt-grok-drawer-enabled) {
           display: none !important;
         }`,
       );

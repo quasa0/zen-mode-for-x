@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { defaultPreferences, KeyMindfulScrolling, KeyScrollLimitMinutes, KeyScrollReminderIntensity } from "../../../storage-keys";
 import { useStorageValue, useStorageValueState } from "../../utilities/useStorageKeyState";
-import SwitchControl from "../ui/SwitchControl";
+import StorageSegmented from "../ui/Segmented";
+import StorageSwitch from "../ui/Switch";
 
 export default function ScrollLimits() {
   const [minutes, setMinutes] = useState(String(defaultPreferences[KeyScrollLimitMinutes]));
   const [storedMinutes, saveMinutes, minutesLoaded] = useStorageValueState(KeyScrollLimitMinutes);
-  const [storedIntensity, saveIntensity, intensityLoaded] = useStorageValueState(KeyScrollReminderIntensity);
   const enabled = useStorageValue(KeyMindfulScrolling) === "on";
-  const intensity = storedIntensity === "clear" ? "clear" : "gentle";
 
   useEffect(() => {
     setMinutes(String(storedMinutes));
@@ -21,16 +20,18 @@ export default function ScrollLimits() {
   };
 
   return (
-    <div className="flex flex-col gap-y-2">
-      <SwitchControl
-        label="Mindful Scrolling"
-        description="Shows amber edges near your scrolling limit and red edges at the limit. The clock runs only after feed scrolling, pauses while writing or idle, and resets after a two-minute break."
+    <>
+      <StorageSwitch
         storageKey={KeyMindfulScrolling}
+        label="Mindful scrolling"
+        description="Tints the window edges amber near your limit and red at it. The clock counts feed scrolling only, pauses while you write or sit idle, and resets after a two-minute break."
       />
-      <fieldset disabled={!minutesLoaded || !intensityLoaded || !enabled} className="flex flex-col gap-y-2 disabled:opacity-40">
-        <div className="flex items-center justify-between gap-x-3">
-          <label htmlFor={KeyScrollLimitMinutes} className="text-sm">Scrolling limit</label>
-          <div className="flex items-center gap-x-2">
+      <fieldset disabled={!minutesLoaded || !enabled} className="zm-sub">
+        <div className="zm-field">
+          <label htmlFor={KeyScrollLimitMinutes} className="zm-field-label">
+            Scrolling limit
+          </label>
+          <div className="zm-unit">
             <input
               id={KeyScrollLimitMinutes}
               type="number"
@@ -39,7 +40,7 @@ export default function ScrollLimits() {
               step="1"
               value={minutes}
               aria-label="Scrolling limit in minutes"
-              className="w-16 rounded-md border border-gray-300 bg-transparent px-2 py-1 text-sm dark:border-gray-600"
+              className="zm-input"
               onChange={(event) => {
                 const value = event.target.value;
                 setMinutes(value);
@@ -49,21 +50,21 @@ export default function ScrollLimits() {
               onBlur={(event) => commitMinutes(event.currentTarget.value)}
               onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); commitMinutes(event.currentTarget.value); } }}
             />
-            <span className="text-xs text-gray-500 dark:text-gray-400">min</span>
+            <span>min</span>
           </div>
         </div>
-        <div className="flex items-center justify-between gap-x-3">
-          <label htmlFor={KeyScrollReminderIntensity} className="text-sm">Reminder intensity</label>
-          <select
-            id={KeyScrollReminderIntensity}
-            value={intensity}
-            className="rounded-md border border-gray-300 bg-transparent px-2 py-1 text-sm dark:border-gray-600"
-            onChange={(event) => saveIntensity(event.target.value)}
-          >
-            <option value="gentle">Gentle</option><option value="clear">Clear</option>
-          </select>
+        <div className="zm-field">
+          <span className="zm-field-label">Reminder</span>
+          <StorageSegmented
+            storageKey={KeyScrollReminderIntensity}
+            label="Reminder intensity"
+            segments={[
+              { value: "gentle", label: "Gentle" },
+              { value: "clear", label: "Clear" },
+            ]}
+          />
         </div>
       </fieldset>
-    </div>
+    </>
   );
 }

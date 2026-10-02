@@ -311,7 +311,7 @@ async function test() {
   const checks = [];
   const check = async (name, fn) => { await fn(); checks.push(name); console.log(`PASS ${name}`); };
   await check("real popup and completed bundle load", async () => {
-    assert.equal(await popup.evaluate("document.body.innerText.includes('Video Resolution Overlay')"), true);
+    assert.equal(await popup.evaluate("document.body.innerText.includes('Video resolution overlay')"), true);
   });
   await check("manifest content script runs in X fixture", receipt);
   await check("default width and ad removal preserve organic content", async () => {
@@ -420,7 +420,7 @@ async function test() {
     assert.equal(new Set(allSettingsKeys).size,allSettingsKeys.length);
     assert.deepEqual([...page.errors, ...popup.errors].filter(error => error.exception || error.exceptionId), []);
     const caughtErrors = [...page.console, ...popup.console].filter(entry => entry.type === "error" &&
-      entry.args?.some(argument => /^Zen for X .*failed$/.test(argument.value || "")));
+      entry.args?.some(argument => /^Zen mode for X .*failed$/.test(argument.value || "")));
     assert.deepEqual(caughtErrors, [], "Caught extension failures must fail the audit");
     if (values.suite === "all") {
       const covered = new Set(["extensionStatus", ...Object.values(coverage).flat().map(row => row.setting)]);

@@ -1,0 +1,99 @@
+import {
+  KeyArticlesButton,
+  KeyBookmarksButton,
+  KeyCommunitiesButton,
+  KeyExploreButton,
+  KeyGrokButton,
+  KeyHideGrokDrawer,
+  KeyHomeButton,
+  KeyJobsButton,
+  KeyListsButton,
+  KeyMessagesButton,
+  KeyNavigationButtonsLabels,
+  KeyNavigationCenter,
+  KeyNotificationsButton,
+  KeyProfileButton,
+  KeySidebarLogo,
+  KeyTopicsButton,
+  KeyUnreadCountBadge,
+  KeyVerifiedOrgsButton,
+  KeyXPremiumButton,
+  KeyZenWriterModeButton,
+} from "../../../storage-keys";
+import useStorageKeyState from "../../utilities/useStorageKeyState";
+import Group from "../ui/Group";
+import StorageSegmented from "../ui/Segmented";
+import StorageSwitch from "../ui/Switch";
+
+// Glyphs match X's own sidebar icons so each shortcut is recognisable at a glance.
+const shortcuts = [
+  { storageKey: KeyHomeButton, label: "Home", paths: [{ d: "M12 9a4 4 0 100 8 4 4 0 000-8zm0 6a2 2 0 11-.001-3.999A2 2 0 0112 15zm0-13.304L.622 8.807l1.06 1.696L3 9.679V19.5A2.5 2.5 0 005.5 22h13a2.5 2.5 0 002.5-2.5V9.679l1.318.824 1.06-1.696L12 1.696zM19 19.5a.5.5 0 01-.5.5h-13a.5.5 0 01-.5-.5V8.429l7-4.375 7 4.375V19.5z" }] },
+  { storageKey: KeyExploreButton, label: "Search", paths: [{ d: "M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z" }] },
+  { storageKey: KeyNotificationsButton, label: "Notifications", paths: [{ d: "M19.993 9.042a8.062 8.062 0 00-15.996.009L2.866 18H7.1a5.002 5.002 0 009.8 0h4.236l-1.143-8.958zM12 20a3.001 3.001 0 01-2.829-2h5.658A3.001 3.001 0 0112 20zm-6.866-4l.847-6.698a6.062 6.062 0 0112.028-.007L18.864 16H5.134z" }] },
+  { storageKey: KeyMessagesButton, label: "Messages", paths: [{ d: "M1.998 5.5a2.5 2.5 0 012.5-2.5h15a2.5 2.5 0 012.5 2.5v13a2.5 2.5 0 01-2.5 2.5h-15a2.5 2.5 0 01-2.5-2.5v-13zm2.5-.5a.5.5 0 00-.5.5v2.764l8 3.638 8-3.636V5.5a.5.5 0 00-.5-.5h-15zm15.5 5.463l-8 3.636-8-3.638V18.5a.5.5 0 00.5.5h15a.5.5 0 00.5-.5v-8.037z" }] },
+  { storageKey: KeyGrokButton, label: "Grok", paths: [{ d: "M2.205 7.423L11.745 21h4.241L6.446 7.423H2.204zm4.237 7.541L2.2 21h4.243l2.12-3.017-2.121-3.02zM16.957 0L9.624 10.435l2.122 3.02L21.2 0h-4.243zm.767 6.456V21H21.2V1.51l-3.476 4.946z" }] },
+  { storageKey: KeyXPremiumButton, label: "Premium", paths: [{ d: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" }] },
+  { storageKey: KeyListsButton, label: "Lists", paths: [{ d: "M3 4.5A2.5 2.5 0 015.5 2h13A2.5 2.5 0 0121 4.5v15a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 19.5v-15zM5.5 4c-.28 0-.5.22-.5.5v15c0 .28.22.5.5.5h13c.28 0 .5-.22.5-.5v-15c0-.28-.22-.5-.5-.5h-13zM16 10H8V8h8v2zm-8 2h8v2H8v-2z" }] },
+  { storageKey: KeyBookmarksButton, label: "Bookmarks", paths: [{ d: "M4 4.5A2.5 2.5 0 016.5 2h11A2.5 2.5 0 0120 4.5v18.44l-8-5.71-8 5.71V4.5zM6.5 4c-.276 0-.5.22-.5.5v14.56l6-4.29 6 4.29V4.5c0-.28-.224-.5-.5-.5h-11z" }] },
+  { storageKey: KeyJobsButton, label: "Jobs", paths: [{ d: "M19.5 6H17V4.5C17 3.12 15.88 2 14.5 2h-5C8.12 2 7 3.12 7 4.5V6H4.5C3.12 6 2 7.12 2 8.5v10C2 19.88 3.12 21 4.5 21h15c1.38 0 2.5-1.12 2.5-2.5v-10C22 7.12 20.88 6 19.5 6zM9 4.5c0-.28.23-.5.5-.5h5c.28 0 .5.22.5.5V6H9V4.5zm11 14c0 .28-.22.5-.5.5h-15c-.27 0-.5-.22-.5-.5v-3.04c.59.35 1.27.54 2 .54h5v1h2v-1h5c.73 0 1.41-.19 2-.54v3.04zm0-6.49c0 1.1-.9 1.99-2 1.99h-5v-1h-2v1H6c-1.1 0-2-.9-2-2V8.5c0-.28.23-.5.5-.5h15c.28 0 .5.22.5.5v3.51z" }] },
+  { storageKey: KeyCommunitiesButton, label: "Communities", paths: [{ d: "M7.501 19.917L7.471 21H.472l.029-1.027c.184-6.618 3.736-8.977 7-8.977.963 0 1.95.212 2.87.672a9.115 9.115 0 00-1.212 1.656 4.388 4.388 0 00-1.658-.329c-2.767 0-4.57 2.223-4.938 6.004H7.56c-.023.302-.05.599-.059.917zm15.998.056L23.528 21H9.472l.029-1.027c.184-6.618 3.736-8.977 7-8.977s6.816 2.358 7 8.977zM21.437 19c-.367-3.781-2.17-6.004-4.938-6.004s-4.57 2.223-4.938 6.004h9.875zm-4.938-9a3.467 3.467 0 01-2.116-.73 3.483 3.483 0 01-1.384-2.77c0-1.93 1.567-3.5 3.5-3.5s3.5 1.57 3.5 3.5c0 1.132-.548 2.13-1.384 2.77a3.467 3.467 0 01-2.116.73zm-1.5-3.5c0 .827.673 1.5 1.5 1.5s1.5-.673 1.5-1.5-.673-1.5-1.5-1.5-1.5.673-1.5 1.5zM7.5 3C9.433 3 11 4.57 11 6.5S9.433 10 7.5 10 4 8.43 4 6.5 5.567 3 7.5 3zm0 2C6.673 5 6 5.673 6 6.5S6.673 8 7.5 8 9 7.327 9 6.5 8.327 5 7.5 5z" }] },
+  { storageKey: KeyArticlesButton, label: "Articles", paths: [{ d: "M7.164 2c-.53 0-1.039.21-1.414.586L2.586 5.75C2.21 6.125 2 6.634 2 7.164V21c0 .552.448 1 1 1h5.25c.552 0 1-.448 1-1s-.448-1-1-1H4V7.164L7.164 4h9.586v3.25c0 .552.448 1 1 1s1-.448 1-1V3c0-.552-.448-1-1-1H7.164z" }, { d: "M7.75 6.25c-.552 0-1 .448-1 1s.448 1 1 1h6.5c.552 0 1-.448 1-1s-.448-1-1-1h-6.5zm-2.5 4.5c0-.552.448-1 1-1h6.5c.552 0 1 .448 1 1s-.448 1-1 1h-6.5c-.552 0-1-.448-1-1z" }, { d: "M18.75 9.086l4.414 4.414-8.5 8.5H10.25v-4.414l8.5-8.5zm1.586 4.414l-1.586-1.586L17.664 13l1.586 1.586 1.086-1.086zm-8.086 4.914l4-4L17.836 16l-4 4H12.25v-1.586z", evenOdd: true }] },
+  { storageKey: KeyTopicsButton, label: "Topics", paths: [{ d: "M12 3.75C7.99 3.75 4.75 7 4.75 11s3.24 7.25 7.25 7.25h1v2.44c1.13-.45 2.42-1.3 3.54-2.54 1.52-1.67 2.66-3.95 2.71-6.67.07-4.46-3.28-7.73-7.25-7.73zM2.75 11c0-5.11 4.14-9.25 9.25-9.25s9.34 4.23 9.25 9.77c-.06 3.28-1.44 6.01-3.23 7.97-1.76 1.94-3.99 3.21-5.87 3.5l-1.15.17V20.2c-4.64-.5-8.25-4.43-8.25-9.2zM15 10H9V8h6v2zm-2 4H9v-2h4v2z" }] },
+  { storageKey: KeyVerifiedOrgsButton, label: "Verified Orgs", paths: [{ d: "M7.323 2h11.443l-3 5h6.648L6.586 22.83 7.847 14H2.523l4.8-12zm1.354 2l-3.2 8h4.676l-.739 5.17L17.586 9h-5.352l3-5H8.677z" }] },
+  { storageKey: KeyZenWriterModeButton, label: "Zen writer", paths: [{ d: "M12.49 0c2.12.07 4.06.68 5.85 1.78 1.82 1.12 3.22 2.63 4.22 4.51 1.14 2.15 1.62 4.44 1.38 6.86-.3 3.04-1.57 5.62-3.82 7.7-1.74 1.61-3.81 2.61-6.16 2.98-2.39.39-4.71.09-6.9-.93-2.99-1.38-5.1-3.61-6.27-6.68-1.13-2.99-1.04-5.97.23-8.9C2.14 4.75 3.94 2.79 6.41 1.45 8.29.43 10.32-.04 12.49 0ZM2.42 7.07c-.86 1.66-1.29 3.42-1.23 5.29.04 1.34.26 2.64.81 3.86 1.15 2.56 2.98 4.46 5.54 5.65 1.41.65 2.89.99 4.45.98 2.41-.01 4.22-1.49 4.94-3.45.73-2 .38-3.86-.99-5.51-.89-1.08-2.04-1.68-3.42-1.89-.55-.08-1.13-.1-1.65-.29-2.15-.76-3.44-2.25-3.74-4.54-.31-2.39.99-4.64 3.09-5.72l.25-.12-.07-.01C8.78 1.55 7.31 2.13 5.97 3.05 4.45 4.08 3.29 5.43 2.42 7.07Zm11.26-.35c.01-.14.04-.29.02-.43-.09-.96-.91-1.64-1.87-1.56-.91.07-1.6.9-1.54 1.85.06.97.96 1.7 1.93 1.57.74-.1 1.26-.6 1.46-1.43Z" }, { d: "M13.56 17.98c-.26.8-.97 1.28-1.75 1.19-.78-.09-1.39-.71-1.44-1.48-.06-.83.44-1.52 1.26-1.72.76-.19 1.53.2 1.86.95.15.34.18.69.07 1.06Z" }] },
+  { storageKey: KeyProfileButton, label: "Profile", paths: [{ d: "M5.651 19h12.698c-.337-1.8-1.023-3.21-1.945-4.19C15.318 13.65 13.838 13 12 13s-3.317.65-4.404 1.81c-.922.98-1.608 2.39-1.945 4.19zm.486-5.56C7.627 11.85 9.648 11 12 11s4.373.85 5.863 2.44c1.477 1.58 2.366 3.8 2.632 6.46l.11 1.1H3.395l.11-1.1c.266-2.66 1.155-4.88 2.632-6.46zM12 4c-1.105 0-2 .9-2 2s.895 2 2 2 2-.9 2-2-.895-2-2-2zM8 6c0-2.21 1.791-4 4-4s4 1.79 4 4-1.791 4-4 4-4-1.79-4-4z" }] },
+];
+
+const ShortcutToggle = ({ storageKey, label, paths }) => {
+  const [pressed, setPressed] = useStorageKeyState(storageKey);
+
+  return (
+    <button type="button" id={storageKey} aria-pressed={pressed} className="zm-nav-toggle" onClick={() => setPressed(!pressed)}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        {paths.map((path) => (
+          <path key={path.d} d={path.d} fillRule={path.evenOdd ? "evenodd" : undefined} clipRule={path.evenOdd ? "evenodd" : undefined} />
+        ))}
+      </svg>
+      <span>{label}</span>
+      <svg className="zm-nav-check" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M2.5 6.5l2.25 2.25L9.5 3.75" />
+      </svg>
+    </button>
+  );
+};
+
+const NavigationPanel = () => (
+  <>
+    <Group title="Sidebar shortcuts">
+      <div className="zm-nav-grid">
+        {shortcuts.map((shortcut) => (
+          <ShortcutToggle key={shortcut.storageKey} {...shortcut} />
+        ))}
+      </div>
+      <p className="zm-description">Checked shortcuts stay in X&apos;s left sidebar. The rest are hidden.</p>
+    </Group>
+    <Group title="Sidebar layout">
+      <div className="zm-row">
+        <div className="zm-row-text">
+          <span className="zm-label">Labels</span>
+          <p className="zm-description">When text shows next to each icon.</p>
+        </div>
+        <StorageSegmented
+          storageKey={KeyNavigationButtonsLabels}
+          label="Labels"
+          segments={[
+            { value: "never", label: "Never" },
+            { value: "hover", label: "Hover" },
+            { value: "always", label: "Always" },
+          ]}
+        />
+      </div>
+      <StorageSwitch storageKey={KeySidebarLogo} label="X logo" description="Shows the logo at the top of the sidebar." />
+      <StorageSwitch storageKey={KeyNavigationCenter} label="Center vertically" description="Moves the shortcuts to the middle of the window." />
+      <StorageSwitch storageKey={KeyUnreadCountBadge} label="Unread badges" description="Shows unread counts on notifications, messages and the account switcher." />
+      <StorageSwitch storageKey={KeyHideGrokDrawer} label="Hide the Grok drawer button" description="Removes the floating Grok button. The Grok shortcut above is separate." />
+    </Group>
+  </>
+);
+
+export default NavigationPanel;

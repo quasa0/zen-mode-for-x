@@ -100,7 +100,7 @@ export async function testPackageRuntime({ browser: browserName = "helium", sign
     popup = await browser.page(`chrome-extension://${id}/index.html`);
     await check("release popup and browser-served assets match the package", async () => {
       await popup.wait("document.body.innerText.includes('Timeline') && !!document.getElementById('removePromotedPosts')");
-      const paths = ["dist/main.js", "css/main.css", "css/typefully.css", "background.js", "influence-background.js", "influence-shared.js"];
+      const paths = ["dist/main.js", "css/main.css", "background.js", "influence-background.js", "influence-shared.js"];
       const actual = await popup.evaluate(`(async () => {
         const resources = ${JSON.stringify(paths)};
         const results = {};
@@ -157,7 +157,7 @@ export async function testPackageRuntime({ browser: browserName = "helium", sign
     });
     await check("enabled release loads bundled CSS and preserves organic content", async () => {
       await storage({ extensionStatus: "on" });
-      await page.wait(`['mt-main-stylesheet','mt-typefully-stylesheet'].every(id => { const link = document.getElementById(id); return link && link.href.startsWith('chrome-extension://${id}/') && link.sheet; }) && getComputedStyle(document.querySelector('[data-testid=primaryColumn]')).width === '700px'`);
+      await page.wait(`(() => { const link = document.getElementById('mt-main-stylesheet'); return !!(link && link.href.startsWith('chrome-extension://${id}/') && link.sheet); })() && getComputedStyle(document.querySelector('[data-testid=primaryColumn]')).width === '700px'`);
       await page.wait(`!${visible("promoted-post")}`);
       assert.equal(await page.evaluate(visible("organic-post")), true);
       assert.equal(await page.evaluate(visible("organic-video")), true);

@@ -7,7 +7,6 @@ export const KeyCommunitiesButton = "communitiesButton";
 export const KeyTopicsButton = "topicsButton";
 export const KeyXPremiumButton = "xPremiumButton";
 export const KeyVerifiedOrgsButton = "verifiedOrgsButton";
-export const KeyTypefullyGrowTab = "typefullyGrowTab";
 export const KeyZenWriterModeButton = "zenWriterModeButton";
 export const KeyGrokButton = "grokButton";
 export const KeyFollowingTimeline = "followingTimeline";
@@ -45,7 +44,6 @@ export const KeyScrollLimitMinutes = "scrollLimitMinutes";
 export const KeyScrollReminderIntensity = "scrollReminderIntensity";
 export const KeyRemoveTopicsToFollow = "removeTopicsToFollow";
 export const KeyRecentMedia = "recentMedia";
-export const KeyTypefullyEnhancementsButtons = "typefullyEnhancementsButtons";
 export const KeyInterFont = "interFont";
 export const KeyTitleNotifications = "titleNotifications";
 export const KeyCustomCss = "customCss";
@@ -81,7 +79,6 @@ export const allSettingsKeys = [
   KeyRemoveTopicsToFollow,
   KeyRemoveTimelineTabs,
   KeyAiSlopButton,
-  KeyTypefullyEnhancementsButtons,
   KeyFollowCount,
   KeyReplyCount,
   KeyRetweetCount,
@@ -115,7 +112,6 @@ export const allSettingsKeys = [
   KeyArticlesButton,
   KeyTopicsButton,
   KeyVerifiedOrgsButton,
-  KeyTypefullyGrowTab,
   KeyZenWriterModeButton,
   KeyProfileButton,
 
@@ -151,7 +147,6 @@ export const defaultPreferences = {
   [KeyRemoveTopicsToFollow]: "on",
   [KeyRemoveTimelineTabs]: "off",
   [KeyAiSlopButton]: "on",
-  [KeyTypefullyEnhancementsButtons]: "on",
   [KeyFollowCount]: "on",
   [KeyReplyCount]: "on",
   [KeyRetweetCount]: "on",
@@ -185,7 +180,6 @@ export const defaultPreferences = {
   [KeyArticlesButton]: "off",
   [KeyTopicsButton]: "off",
   [KeyVerifiedOrgsButton]: "off",
-  [KeyTypefullyGrowTab]: "on",
   [KeyZenWriterModeButton]: "on",
   [KeyProfileButton]: "on",
 

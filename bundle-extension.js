@@ -177,10 +177,10 @@ rl.on("close", () => {
   process.exit(0);
 });
 
-const generateSafariProjectCommand = `xcrun safari-web-extension-converter bundle/firefox --project-location bundle/safari --app-name 'Minimal Twitter' --bundle-identifier 'com.typefully.minimal-twitter'`;
+const generateSafariProjectCommand = `xcrun safari-web-extension-converter bundle/firefox --project-location bundle/safari --app-name 'Zen mode for X' --bundle-identifier 'com.quasa0.zen-mode-for-x'`;
 
 // The first command currently ignores the full --bundle-identifier flag (it still take the company name), so a replace is required to make sure it matches our bundle identifier
-const fixBundleIdentifierCommand = `find "bundle/safari/Minimal Twitter" \\( -name "*.swift" -or -name "*.pbxproj" \\) -type f -exec sed -i '' 's/com.typefully.Minimal-Twitter/com.typefully.minimal-twitter/g' {} +`;
+const fixBundleIdentifierCommand = `find "bundle/safari/Zen mode for X" \\( -name "*.swift" -or -name "*.pbxproj" \\) -type f -exec sed -i '' 's/com.quasa0.Zen-mode-for-X/com.quasa0.zen-mode-for-x/g' {} +`;
 
 /*--- Bundle without prompting
 await bundleAll();

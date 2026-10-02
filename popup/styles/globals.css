@@ -1,66 +1,814 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button,
+input {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+h1,
+h2,
+p,
+fieldset {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+svg {
+  display: block;
+}
+
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
 
 :root {
-  --twitter-blue: #1da1f2;
-  --twitter-bg-one: #ffffff;
-  --twitter-bg-two: #f7f9f9;
-  --twitter-accent-one: #536471;
-  --twitter-accent-two: #dbe4e6;
-  --twitter-accent-three: #1d9bf0;
-  --twitter-accent-four: #1d9bf01a;
-  --twitter-accent-five: #1a8cd8;
+  color-scheme: light dark;
+
+  --bg: #ffffff;
+  --bg-subtle: #fafafa;
+  --bg-hover: #f2f2f2;
+  --bg-active: #ebebeb;
+  --text: #171717;
+  --text-secondary: #666666;
+  --text-disabled: #8f8f8f;
+  --border: rgb(0 0 0 / 0.08);
+  --border-strong: rgb(0 0 0 / 0.21);
+  --control-off: #8f8f8f;
+  --control-on: #171717;
+  --control-thumb: #ffffff;
+  --focus: #0072f5;
+  --warning: #a35200;
+  --error: #cb2a2f;
+
+  --ring: 0 0 0 1px var(--border);
+  --ring-hover: 0 0 0 1px var(--border-strong);
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-swap: cubic-bezier(0.2, 0, 0, 1);
+
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --twitter-bg-one: #15202b;
-    --twitter-bg-two: #192734;
-    --twitter-accent-one: #8899a6;
-    --twitter-accent-two: #38444d;
+    --bg: #0a0a0a;
+    --bg-subtle: #111111;
+    --bg-hover: #1a1a1a;
+    --bg-active: #1f1f1f;
+    --text: #ededed;
+    --text-secondary: #a1a1a1;
+    --text-disabled: #6b6b6b;
+    --border: rgb(255 255 255 / 0.14);
+    --border-strong: rgb(255 255 255 / 0.24);
+    --control-off: #6b6b6b;
+    --control-on: #ededed;
+    --control-thumb: #0a0a0a;
+    --focus: #52a8ff;
+    --warning: #ff990a;
+    --error: #ff6166;
   }
 }
 
-* {
-  margin: 0;
-}
-
-html,
-body,
-#__next {
-  @apply h-full;
+html {
+  background: var(--bg);
 }
 
 body {
-  @apply antialiased dark:bg-x-bgOneDark bg-x-bgOne;
+  min-width: 400px;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 14px/20px var(--font-sans);
+  font-feature-settings: "liga" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-#__next {
-  @apply isolate p-2;
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
-img,
-picture,
-video,
-canvas,
-svg {
-  @apply block max-w-full;
+::selection {
+  background: var(--text);
+  color: var(--bg);
 }
 
-p,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  @apply break-words;
+/* Shell. The toolbar popup has a fixed size so tab changes do not resize it. */
+
+.zm-shell {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  height: 600px;
+  margin: 0 auto;
 }
 
-input,
-button,
-textarea,
-select {
-  font: inherit;
+/* The same page opens as a full tab from the browser's extension settings. */
+@media (min-width: 640px) {
+  .zm-shell {
+    width: 440px;
+    height: 100vh;
+  }
+}
+
+.zm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 12px;
+}
+
+.zm-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.zm-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+.zm-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.006em;
+}
+
+.zm-master {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 16px;
+  cursor: pointer;
+}
+
+/* Tabs */
+
+.zm-tabs {
+  display: flex;
+  gap: 18px;
+  padding: 0 20px;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+
+.zm-tab {
+  position: relative;
+  padding: 10px 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+/* Widen the hit area into the gap without moving the label. */
+.zm-tab::before {
+  content: "";
+  position: absolute;
+  inset: 0 -9px;
+}
+
+.zm-tab::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: transparent;
+}
+
+.zm-tab[aria-selected="true"] {
+  color: var(--text);
+}
+
+.zm-tab[aria-selected="true"]::after {
+  background: var(--text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .zm-tab:hover {
+    color: var(--text);
+  }
+}
+
+.zm-notice {
+  margin: 0;
+  padding: 10px 20px;
+  box-shadow: inset 0 -1px 0 var(--border);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.zm-panels {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.zm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 20px 20px 28px;
+}
+
+.zm-panel[hidden] {
+  display: none;
+}
+
+.zm-panel[data-paused="true"] {
+  opacity: 0.5;
+}
+
+/* Groups and rows. Each wrapper owns its gap; children carry no margins. */
+
+.zm-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.zm-group-title {
+  margin: 0 0 -2px;
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.zm-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.zm-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.zm-label {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.zm-description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 18px;
+  text-wrap: pretty;
+}
+
+.zm-row > .zm-switch {
+  margin-top: 1px;
+}
+
+/* Settings that belong to the switch above them. */
+.zm-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 0 16px;
+  border: 0;
+  box-shadow: inset 1px 0 0 var(--border);
+}
+
+.zm-sub:disabled {
+  opacity: 0.5;
+}
+
+.zm-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+}
+
+.zm-field-label {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.zm-value {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
+}
+
+/* Switch */
+
+.zm-switch {
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: var(--control-off);
+  cursor: pointer;
+}
+
+.zm-switch::before {
+  content: "";
+  position: absolute;
+  inset: -9px -6px;
+}
+
+.zm-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--control-thumb);
+}
+
+.zm-switch[data-ready] {
+  transition: background-color 150ms var(--ease-out);
+}
+
+.zm-switch[data-ready] .zm-switch-thumb {
+  transition: transform 150ms var(--ease-out);
+}
+
+.zm-switch[aria-checked="true"],
+.zm-switch[aria-checked="mixed"] {
+  background: var(--control-on);
+}
+
+.zm-switch[aria-checked="true"] .zm-switch-thumb {
+  transform: translateX(14px);
+}
+
+.zm-switch[aria-checked="mixed"] .zm-switch-thumb {
+  transform: translateX(7px) scaleY(0.25);
+}
+
+/* Buttons and inputs */
+
+.zm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--bg);
+  box-shadow: var(--ring);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition-property: scale, background-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: var(--ease-out);
+}
+
+.zm-button:active:not(:disabled) {
+  scale: 0.96;
+}
+
+.zm-button:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.zm-button[data-variant="primary"] {
+  background: var(--text);
+  box-shadow: none;
+  color: var(--bg);
+}
+
+.zm-button[data-variant="primary"]:disabled {
+  background: var(--bg-active);
+  color: var(--text-disabled);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .zm-button:not([data-variant="primary"]):hover:not(:disabled) {
+    background: var(--bg-hover);
+    box-shadow: var(--ring-hover);
+  }
+
+  .zm-button[data-variant="primary"]:hover:not(:disabled) {
+    opacity: 0.86;
+  }
+}
+
+.zm-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 18px;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .zm-link:hover {
+    color: var(--text);
+    text-decoration-color: currentColor;
+  }
+}
+
+.zm-input {
+  height: 32px;
+  min-width: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--bg);
+  box-shadow: var(--ring-hover);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 18px;
+  transition: box-shadow 150ms var(--ease-out);
+}
+
+.zm-input::placeholder {
+  color: var(--text-disabled);
+}
+
+.zm-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--focus), 0 0 0 3px color-mix(in srgb, var(--focus) 32%, transparent);
+}
+
+.zm-input[type="number"] {
+  width: 64px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.zm-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.zm-inline {
+  display: flex;
+  gap: 8px;
+}
+
+.zm-inline > .zm-input {
+  flex: 1;
+}
+
+.zm-status {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 18px;
+}
+
+/* Segmented control */
+
+.zm-segments {
+  display: flex;
+  flex: none;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+}
+
+.zm-segment {
+  position: relative;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  /* Concentric with the 8px track and its 2px padding. */
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 16px;
+  cursor: pointer;
+  transition: color 150ms var(--ease-out), background-color 150ms var(--ease-out);
+}
+
+.zm-segment[aria-checked="true"] {
+  background: var(--bg);
+  box-shadow: var(--ring), 0 1px 2px rgb(0 0 0 / 0.06);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.zm-segment:disabled {
+  cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .zm-segment:hover:not(:disabled) {
+    color: var(--text);
+  }
+}
+
+/* Slider */
+
+.zm-slider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 20px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.zm-slider-track {
+  position: relative;
+  flex: 1;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--border-strong);
+}
+
+.zm-slider-range {
+  position: absolute;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--text);
+}
+
+.zm-slider-thumb {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: 0 0 0 1px var(--border-strong), 0 1px 2px rgb(0 0 0 / 0.16);
+  transition: scale 150ms var(--ease-out);
+}
+
+.zm-slider-thumb:active {
+  scale: 1.1;
+}
+
+.zm-ticks {
+  display: flex;
+  justify-content: space-between;
+  /* Tick labels centre under the thumb's travel, which is inset by half a thumb. */
+  margin: 0 -8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+}
+
+.zm-ticks > span {
+  width: 32px;
+  text-align: center;
+}
+
+.zm-ticks > span[data-current="true"] {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Sidebar shortcut toggles */
+
+.zm-nav-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 12px;
+  margin: 0 -8px;
+}
+
+.zm-nav-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-disabled);
+  font-size: 13px;
+  line-height: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition-property: scale, background-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: var(--ease-out);
+}
+
+.zm-nav-toggle:active {
+  scale: 0.96;
+}
+
+.zm-nav-toggle[aria-pressed="true"] {
+  color: var(--text);
+}
+
+.zm-nav-toggle > svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.zm-nav-toggle > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zm-nav-toggle[aria-pressed="false"] > span {
+  text-decoration: line-through;
+  text-decoration-color: var(--border-strong);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .zm-nav-toggle:hover {
+    background: var(--bg-hover);
+  }
+}
+
+/* The check stays mounted so both directions cross-fade. */
+.zm-nav-check {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  opacity: 0;
+  scale: 0.25;
+  filter: blur(4px);
+  transition-property: opacity, scale, filter;
+  transition-duration: 300ms;
+  transition-timing-function: var(--ease-swap);
+}
+
+.zm-nav-toggle[aria-pressed="true"] > .zm-nav-check {
+  opacity: 1;
+  scale: 1;
+  filter: blur(0);
+}
+
+/* Editor */
+
+.zm-editor {
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: var(--ring-hover);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.zm-editor .cm-editor {
+  background: var(--bg);
+}
+
+.zm-editor .cm-editor.cm-focused {
+  outline: none;
+}
+
+.zm-editor:focus-within {
+  box-shadow: 0 0 0 1px var(--focus), 0 0 0 3px color-mix(in srgb, var(--focus) 32%, transparent);
+}
+
+.zm-editor .cm-gutters {
+  border-right: 0;
+  background: var(--bg-subtle);
+  color: var(--text-disabled);
+}
+
+.zm-editor .cm-scroller {
+  font-family: var(--font-mono);
+}
+
+.zm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.zm-about {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.zm-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zm-button,
+  .zm-nav-toggle,
+  .zm-slider-thumb {
+    transition-property: background-color, color, box-shadow;
+  }
+
+  .zm-button:active:not(:disabled),
+  .zm-nav-toggle:active,
+  .zm-slider-thumb:active {
+    scale: 1;
+  }
+
+  .zm-switch[data-ready] .zm-switch-thumb {
+    transition: none;
+  }
+
+  .zm-nav-check {
+    scale: 1;
+    filter: none;
+    transition-property: opacity;
+    transition-duration: 150ms;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border: var(--border-strong);
+    --text-secondary: var(--text);
+  }
 }

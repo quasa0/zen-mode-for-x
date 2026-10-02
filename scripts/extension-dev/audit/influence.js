@@ -347,7 +347,7 @@ export async function runInfluenceAudit({ page, popup, storage, check, loadFixtu
       assert.equal(await page.evaluate(`document.documentElement.outerHTML.includes(${JSON.stringify(fakeKey)})`), false);
       assert.equal(await popup.evaluate("document.getElementById('jev-api-key').value"), "");
       assert.equal(JSON.stringify(await admin(InfluenceMessages.status)).includes(fakeKey), false);
-      await popup.evaluate("window.__influenceCreateURL = URL.createObjectURL; URL.createObjectURL = blob => {window.__influenceExport=blob; return window.__influenceCreateURL(blob);}; window.__influenceBlockDownload = event => {if(event.target.closest('a[download]'))event.preventDefault();}; document.addEventListener('click',window.__influenceBlockDownload,true); [...document.querySelectorAll('button')].find(button=>button.textContent === 'Export Settings').click(); true");
+      await popup.evaluate("window.__influenceCreateURL = URL.createObjectURL; URL.createObjectURL = blob => {window.__influenceExport=blob; return window.__influenceCreateURL(blob);}; window.__influenceBlockDownload = event => {if(event.target.closest('a[download]'))event.preventDefault();}; document.addEventListener('click',window.__influenceBlockDownload,true); [...document.querySelectorAll('button')].find(button=>button.textContent === 'Export settings').click(); true");
       try {
         await popup.wait("!!window.__influenceExport");
         const exported = await popup.evaluate("window.__influenceExport.text()");

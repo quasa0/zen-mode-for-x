@@ -1,5 +1,5 @@
 {
-  "name": "minimal-twitter",
+  "name": "zen-mode-for-x",
   "type": "module",
   "scripts": {
     "build": "node ./bundle-extension.js",
