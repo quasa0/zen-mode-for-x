@@ -2,18 +2,24 @@ import assert from "node:assert/strict";
 
 const visible = (selector) => `(() => { const element = document.querySelector(${JSON.stringify(selector)}); if (!element) return false; const rect = element.getBoundingClientRect(); const style = getComputedStyle(element); return !!(rect.width && rect.height && style.display !== 'none' && style.visibility !== 'hidden'); })()`;
 const cleanFavicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E";
-const keys = ["aiSlopButton", "interFont", "searchBar", "transparentSearch", "titleNotifications", "tweetButton", "customCss", "replyCount", "retweetCount", "likeCount", "followCount"];
+const keys = ["aiSlopButton", "aiSlopReply", "interFont", "searchBar", "transparentSearch", "titleNotifications", "tweetButton", "customCss", "replyCount", "retweetCount", "likeCount", "followCount"];
 
 export async function runInterfaceAudit({ page, popup, storage, check, loadFixture }) {
   const saved = await popup.evaluate(`new Promise(resolve => chrome.storage.local.get(${JSON.stringify(keys)}, resolve))`);
   const fresh = async () => {
-    await storage({ writerMode: "off", aiSlopButton: "off", interFont: "off", searchBar: "on", transparentSearch: "off", titleNotifications: "on", tweetButton: "on", customCss: "" });
+    await storage({ writerMode: "off", aiSlopButton: "off", aiSlopReply: "off", interFont: "off", searchBar: "on", transparentSearch: "off", titleNotifications: "on", tweetButton: "on", customCss: "" });
     await loadFixture("interface.html");
   };
   const freshThread = async () => {
     await fresh();
     await page.evaluate("window.interfaceFixture.enterThread()");
     await storage({ aiSlopButton: "on" });
+    await page.wait("document.querySelectorAll('#reply-post .mt-ai-slop-button').length === 1");
+  };
+  const freshReplyThread = async () => {
+    await fresh();
+    await page.evaluate("window.interfaceFixture.enterThread()");
+    await storage({ aiSlopReply: "on", aiSlopButton: "on" });
     await page.wait("document.querySelectorAll('#reply-post .mt-ai-slop-button').length === 1");
   };
   const doubleClickReply = () => page.evaluate("(() => { const button = document.querySelector('#reply-post .mt-ai-slop-button'); button.click(); button.click(); })()");
@@ -205,6 +211,59 @@ export async function runInterfaceAudit({ page, popup, storage, check, loadFixtu
       assert.deepEqual(await page.evaluate("(() => { const style = document.querySelector('#reply-post .post-content').style; return { display: style.display, priority: style.getPropertyPriority('display') }; })()"), { display: "flex", priority: "important" });
     });
 
+    await check("AI Slop: the framed screenshot reply posts before the report and the block", async () => {
+      await freshReplyThread();
+      const postWidth = await page.evaluate("Math.round(document.querySelector('#reply-post').getBoundingClientRect().width)");
+      const postHeight = await page.evaluate("Math.round(document.querySelector('#reply-post').getBoundingClientRect().height)");
+      await page.evaluate("document.querySelector('#reply-post .mt-ai-slop-button').click()");
+      assert.equal(await page.evaluate("document.querySelector('#reply-post .mt-ai-slop-button').getAttribute('aria-label')"), "Click again within 3 seconds to reply with a screenshot, report this post as spam and block @reply_author");
+      await page.evaluate("document.querySelector('#reply-post .mt-ai-slop-button').click()");
+      await page.wait("!!document.querySelector('#reply-post .mt-ai-slop-reported-view-button')", 20000);
+      assert.deepEqual(await page.evaluate("window.interfaceFixture.events"), ["reply:101", "report:101", "block:reply_author"]);
+      const [reply] = await page.evaluate("window.interfaceFixture.replies");
+      assert.deepEqual({ statusId: reply.statusId, name: reply.name, type: reply.type }, { statusId: "101", name: "ai-slop-report.png", type: "image/png" });
+      assert.deepEqual({ width: reply.width, height: reply.height }, { width: (postWidth + 32) * 2, height: (postHeight + 108) * 2 }, "The image must be the post plus the frame at 2x");
+      assert.deepEqual(reply.frameColor, [10, 10, 10]);
+      assert.ok(reply.postColors > 2, "The captured post must contain rendered content, not a blank area");
+      assert.equal(await page.evaluate("location.pathname"), "/root_author/status/100");
+      assert.equal(await page.evaluate("document.querySelectorAll('[role=dialog]').length"), 0);
+    });
+
+    await check("AI Slop: a reply composer for another author is discarded before any report or block", async () => {
+      await freshReplyThread();
+      await page.evaluate("window.interfaceFixture.replyDialogHandle = 'wrong_author'");
+      await doubleClickReply();
+      await page.wait("document.querySelector('#reply-post .mt-ai-slop-button')?.getAttribute('aria-label') === 'failed'", 15000);
+      assert.deepEqual(await page.evaluate("window.interfaceFixture.events"), []);
+      assert.deepEqual(await page.evaluate("window.interfaceFixture.menuOpens"), []);
+      assert.equal(await page.evaluate("document.querySelectorAll('[role=dialog]').length"), 0, "The unsent draft must be closed");
+      assert.equal(await page.evaluate("location.pathname"), "/root_author/status/100");
+    });
+
+    await check("AI Slop: a post that does not allow replies stops before the composer, report or block", async () => {
+      await freshReplyThread();
+      await page.evaluate("document.querySelector('#reply-post [data-testid=reply]').setAttribute('aria-disabled', 'true')");
+      await doubleClickReply();
+      await page.wait("document.querySelector('#reply-post .mt-ai-slop-button').getAttribute('aria-label') === 'failed'");
+      assert.deepEqual(await page.evaluate("window.interfaceFixture.events"), []);
+      assert.deepEqual(await page.evaluate("window.interfaceFixture.menuOpens"), []);
+      assert.equal(await page.evaluate("document.querySelectorAll('[role=dialog]').length"), 0);
+    });
+
+    await check("AI Slop: disabling during the reply composer cancels before posting, reporting or blocking", async () => {
+      await freshReplyThread();
+      await page.evaluate("window.interfaceFixture.replyPostFails = true");
+      await doubleClickReply();
+      await page.wait("!!document.querySelector('#synthetic-reply-composer [data-testid=attachments]')");
+      await storage({ aiSlopButton: "off" });
+      await page.wait("!document.querySelector('.mt-ai-slop-button') && !document.querySelector('[role=dialog], [role=alertdialog]')");
+      await page.evaluate("new Promise(resolve => setTimeout(resolve, 800))");
+      assert.deepEqual(await page.evaluate("[window.interfaceFixture.discardedDrafts, window.interfaceFixture.savedDrafts]"), [1, 0], "The attached draft must be discarded, not saved");
+      assert.deepEqual(await page.evaluate("window.interfaceFixture.events"), []);
+      assert.deepEqual(await page.evaluate("window.interfaceFixture.menuOpens"), []);
+      assert.equal(await page.evaluate("location.pathname"), "/root_author/status/100");
+    });
+
     await check("AI Slop: disabling cancels an in-flight native workflow before report or block submission", async () => {
       await freshThread();
       await doubleClickReply();
@@ -251,5 +310,5 @@ export async function runInterfaceAudit({ page, popup, storage, check, loadFixtu
     const absent = keys.filter((key) => !(key in saved));
     if (absent.length) await popup.evaluate(`new Promise(resolve => chrome.storage.local.remove(${JSON.stringify(absent)}, resolve))`);
   }
-  return keys.map((setting) => ({ setting, status: "pass", ...(setting === "aiSlopButton" ? { live: "outward actions tested only with synthetic local dialogs" } : {}) }));
+  return keys.map((setting) => ({ setting, status: "pass", ...(setting === "aiSlopButton" || setting === "aiSlopReply" ? { live: "outward actions tested only with synthetic local dialogs" } : {}) }));
 }

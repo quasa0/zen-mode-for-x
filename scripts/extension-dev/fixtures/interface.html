@@ -30,7 +30,7 @@
       #primary-search { display: block; padding: 12px; background: rgb(210, 220, 230); }
       #native-trends { position: fixed; top: 67px; }
       #custom-probe { color: rgb(12, 34, 56); margin-left: 4px; }
-      [role="dialog"], [role="menu"] { position: fixed; z-index: 1000; top: 100px; left: 300px; width: 560px; padding: 20px; background: white; border: 1px solid #aaa; }
+      [role="dialog"], [role="alertdialog"], [role="menu"] { position: fixed; z-index: 1000; top: 100px; left: 300px; width: 560px; padding: 20px; background: white; border: 1px solid #aaa; }
       [role="menu"] { display: flex; flex-direction: column; gap: 12px; }
       [role="dialog"] button { margin: 8px; }
       #fixture-markers { position: fixed; bottom: 0; left: 0; }
@@ -67,7 +67,7 @@
     <script>
       const fixture = window.interfaceFixture = {
         reportRequests: [], reportSelections: [], blockedAuthors: [], menuOpens: [], reportAvailable: true, cancelReportAfterSpam: false,
-        blockDialogHandle: null, modalOpens: 0, nativePostActions: 0, mutations: 0,
+        blockDialogHandle: null, replies: [], events: [], replyDialogHandle: null, replyPostFails: false, savedDrafts: 0, discardedDrafts: 0, modalOpens: 0, nativePostActions: 0, mutations: 0,
       };
       const svg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h20" /></svg>';
       function addPost(id, author, statusId, quoted = false) {
@@ -84,7 +84,7 @@
       addPost('root-post', 'root_author', '100', true);
       addPost('reply-post', 'reply_author', '101', true);
       addPost('other-reply-post', 'other_author', '102');
-      const clearLayers = () => document.querySelectorAll('[role="dialog"], [role="menu"]').forEach(element => element.remove());
+      const clearLayers = () => document.querySelectorAll('[role="dialog"], [role="alertdialog"], [role="menu"]').forEach(element => element.remove());
       fixture.clearLayers = clearLayers;
       fixture.tick = () => { document.getElementById('fixture-markers').textContent = 'mutation ' + ++fixture.mutations; };
       fixture.recyclePost = (id, author, statusId) => {
@@ -114,7 +114,7 @@
         const next = action(root, 'Next', () => {
           clearLayers(); const confirmation = dialog('Report this Post');
           action(confirmation, 'Report', () => {
-            fixture.reportRequests.push(post.dataset.statusId);
+            fixture.reportRequests.push(post.dataset.statusId); fixture.events.push('report:' + post.dataset.statusId);
             clearLayers(); const done = dialog('Thanks for your report');
             action(done, 'Done', () => clearLayers());
           });
@@ -133,7 +133,7 @@
         if (fixture.reportAvailable) action(root, 'Report post', () => report(post), { role: 'menuitem' });
         action(root, 'Block @' + post.dataset.author, () => {
           clearLayers(); const expected = fixture.blockDialogHandle || post.dataset.author; const confirmation = dialog('Block @' + expected + '?');
-          action(confirmation, 'Block', () => { fixture.blockedAuthors.push(expected); clearLayers(); });
+          action(confirmation, 'Block', () => { fixture.blockedAuthors.push(expected); fixture.events.push('block:' + expected); clearLayers(); });
           action(confirmation, 'Cancel', () => clearLayers());
         }, { role: 'menuitem' });
       }
@@ -143,11 +143,46 @@
         root.innerHTML += '<div contenteditable="true" role="textbox" data-testid="tweetTextarea_0"><div><div class="public-DraftStyleDefault-block"><span data-text="true">Modal </span><span><span data-text="true">@mention</span></span><span data-text="true"> stays together.</span></div><div class="public-DraftStyleDefault-block"><span data-text="true">Second line.</span></div><div class="public-DraftStyleDefault-block"><span><br data-text="true" /></span></div><div class="public-DraftStyleDefault-block"><span data-text="true">After blank line.</span></div></div></div><div contenteditable="true" role="textbox" data-testid="tweetTextarea_1"><div><div class="public-DraftStyleDefault-block"><span data-text="true">Second thread post.</span></div></div></div><div data-testid="toolBar"><button data-testid="tweetButton">Post</button></div>';
         action(root, 'Close', () => clearLayers(), { 'aria-label': 'Close' }); return root;
       };
+      // Mirrors X: the reply composer has its own route, a hidden file input, and a Post button that needs an attachment.
+      function replyComposer(post) {
+        clearLayers(); const returnPath = location.pathname;
+        const leave = () => { clearLayers(); history.replaceState(null, '', returnPath); fixture.tick(); };
+        history.replaceState(null, '', '/compose/post');
+        const root = dialog('Replying to @' + (fixture.replyDialogHandle || post.dataset.author)); root.id = 'synthetic-reply-composer';
+        root.insertAdjacentHTML('beforeend', '<div contenteditable="true" role="textbox" data-testid="tweetTextarea_0"></div><input type="file" data-testid="fileInput" accept="image/*" style="display: none" />');
+        let attachment;
+        const send = action(root, 'Reply', () => {
+          if (send.getAttribute('aria-disabled') === 'true' || fixture.replyPostFails) return;
+          fixture.replies.push({ statusId: post.dataset.statusId, ...attachment }); fixture.events.push('reply:' + post.dataset.statusId); leave();
+        }, { 'data-testid': 'tweetButton', 'aria-disabled': 'true' });
+        action(root, 'Close', () => {
+          if (!attachment) { leave(); return; }
+          const sheet = document.createElement('div'); sheet.setAttribute('role', 'alertdialog'); sheet.dataset.testid = 'confirmationSheetDialog';
+          sheet.innerHTML = '<h2>Save post?</h2>'; document.body.appendChild(sheet);
+          action(sheet, 'Save', () => { fixture.savedDrafts++; leave(); }, { 'data-testid': 'confirmationSheetConfirm' });
+          action(sheet, 'Discard', () => { fixture.discardedDrafts++; leave(); }, { 'data-testid': 'confirmationSheetCancel' });
+        }, { 'aria-label': 'Close' });
+        root.querySelector('input').addEventListener('change', async event => {
+          const file = event.target.files[0]; if (!file) return;
+          const bitmap = await createImageBitmap(file);
+          const canvas = document.createElement('canvas'); canvas.width = bitmap.width; canvas.height = bitmap.height;
+          const context = canvas.getContext('2d'); context.drawImage(bitmap, 0, 0);
+          const pixels = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
+          const colorAt = (x, y) => Array.from(pixels.slice((y * bitmap.width + x) * 4, (y * bitmap.width + x) * 4 + 3));
+          // The post area starts below the 60 px header and inside the 16 px frame, at 2 device pixels per CSS pixel.
+          const postColors = new Set();
+          for (let y = 140; y < bitmap.height - 116; y += 3) for (let x = 52; x < bitmap.width - 52; x += 3) postColors.add(colorAt(x, y).join(','));
+          attachment = { name: file.name, type: file.type, size: file.size, width: bitmap.width, height: bitmap.height, frameColor: colorAt(6, 6), postColors: postColors.size };
+          const preview = document.createElement('div'); preview.dataset.testid = 'attachments'; preview.textContent = file.name; root.appendChild(preview);
+          send.setAttribute('aria-disabled', 'false'); fixture.tick();
+        });
+        fixture.tick(); return root;
+      }
       document.addEventListener('click', event => {
         const caret = event.target.closest('[data-testid="caret"]');
         if (caret && !caret.closest('[data-testid="quoteTweet"]')) menu(caret.closest('[data-testid="tweet"]'));
         const reply = event.target.closest('[data-testid="reply"]');
-        if (reply) fixture.openComposer();
+        if (reply) replyComposer(reply.closest('[data-testid="tweet"]'));
       });
       document.addEventListener('keydown', event => { if (event.key === 'Escape') clearLayers(); });
       document.getElementById('show-modal').addEventListener('click', fixture.openComposer);

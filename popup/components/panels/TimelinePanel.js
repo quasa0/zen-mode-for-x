@@ -1,5 +1,6 @@
 import {
   KeyAiSlopButton,
+  KeyAiSlopReply,
   KeyFollowingTimeline,
   KeyHideViewCount,
   KeyRecentMedia,
@@ -46,6 +47,7 @@ const TimelinePanel = () => (
       <StorageSwitch storageKey={KeyRecentMedia} label="Recent media on profiles" description="Shows photos from loaded profile posts in a side panel on wide screens." />
       <StorageSwitch storageKey={KeyVideoResolutionOverlay} label="Video resolution overlay" description="Labels each video with its resolution and aspect ratio." />
       <StorageSwitch storageKey={KeyAiSlopButton} label="AI slop button" description="Adds an “ai slop” action to replies. It reports the reply as spam, then blocks the author." />
+      <StorageSwitch storageKey={KeyAiSlopReply} label="Reply with a screenshot" description="Before the report, the AI slop action posts a framed image of the reply from your account." />
     </Group>
   </>
 );

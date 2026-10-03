@@ -34,7 +34,7 @@ Website: [zen.quasa0.com](https://zen.quasa0.com)
 
 ## Newer Additions
 
-- AI Slop reply action: adds a guarded reply-level action that can report a reply as spam, block the author, and collapse the reported post after confirmation.
+- AI Slop reply action: adds a guarded reply-level action that can report a reply as spam, block the author, and collapse the reported post after confirmation. With "Reply with a screenshot" on, it first posts a framed image of the reply from your account. The image is rebuilt from the page, so the extension needs no screen-capture permission.
 - Zen Writer Mode shortcut: adds a left-nav shortcut for quickly entering or leaving Writer Mode on X.
 - Settings portability: exports and imports all extension settings from the popup.
 - Stronger feed cleanup: hides more recommendation modules, including in-feed "Who to follow" suggestions.

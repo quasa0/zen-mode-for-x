@@ -50,6 +50,7 @@ export const KeyCustomCss = "customCss";
 export const KeyHideViewCount = "hideViewCount";
 export const KeyHideGrokDrawer = "hideGrokDrawer";
 export const KeyAiSlopButton = "aiSlopButton";
+export const KeyAiSlopReply = "aiSlopReply";
 export const KeyVideoResolutionOverlay = "videoResolutionOverlay";
 
 export const allSettingsKeys = [
@@ -79,6 +80,7 @@ export const allSettingsKeys = [
   KeyRemoveTopicsToFollow,
   KeyRemoveTimelineTabs,
   KeyAiSlopButton,
+  KeyAiSlopReply,
   KeyFollowCount,
   KeyReplyCount,
   KeyRetweetCount,
@@ -147,6 +149,7 @@ export const defaultPreferences = {
   [KeyRemoveTopicsToFollow]: "on",
   [KeyRemoveTimelineTabs]: "off",
   [KeyAiSlopButton]: "on",
+  [KeyAiSlopReply]: "on",
   [KeyFollowCount]: "on",
   [KeyReplyCount]: "on",
   [KeyRetweetCount]: "on",

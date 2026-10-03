@@ -7,6 +7,7 @@
 
 import {
   KeyAiSlopButton,
+  KeyAiSlopReply,
   KeyArticlesButton,
   KeyBookmarksButton,
   KeyCommunitiesButton,
@@ -50,7 +51,7 @@ import {
   KeyXPremiumButton,
   KeyZenWriterModeButton,
 } from "../../../../storage-keys";
-import { changeAiSlopButton } from "../options/aiSlopButton";
+import { changeAiSlopButton, changeAiSlopReply } from "../options/aiSlopButton";
 import { changeCustomCss } from "../options/customCss";
 import { changeFollowingAndFollowersCounts, changeLikeCount, changeReplyCount, changeRetweetCount } from "../options/hideVanityCounts";
 import changeHideViewCounts from "../options/hideViewCount";
@@ -112,6 +113,7 @@ export const staticFeatures = {
     changeInfluenceWarnings(data);
     changeTopicsToFollow(data[KeyRemoveTopicsToFollow]);
     changeTimelineTabs(data[KeyRemoveTimelineTabs], data[KeyWriterMode]);
+    changeAiSlopReply(data[KeyAiSlopReply]);
     changeAiSlopButton(data[KeyAiSlopButton]);
     updateZenWriterModeButtonState(data[KeyWriterMode]);
     changeFollowingAndFollowersCounts(data[KeyFollowCount]);

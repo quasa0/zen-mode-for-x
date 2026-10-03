@@ -1,5 +1,6 @@
 import selectors from "../../selectors";
 import addStyles, { removeStyles } from "../utilities/addStyles";
+import { canvasToImageBlob, captureElement, frameAiSlopScreenshot } from "./aiSlopCard";
 
 const BUTTON_CLASS = "mt-ai-slop-button";
 const CONTROL_CLASS = "mt-ai-slop-control";
@@ -10,8 +11,11 @@ const REPORTED_CLASS = "mt-ai-slop-reported";
 const REPORTED_NOTICE_CLASS = "mt-ai-slop-reported-notice";
 const REPORTED_VIEW_BUTTON_CLASS = "mt-ai-slop-reported-view-button";
 const STYLE_ID = "aiSlopButton";
-const DIALOG_SELECTOR = '[role="dialog"]';
+// X renders confirmation sheets, such as "Save post?", as alert dialogs.
+const DIALOG_SELECTOR = '[role="dialog"], [role="alertdialog"]';
 const MENU_SELECTOR = '[role="menu"]';
+const COMPOSE_PATHNAME = /^\/compose\/(?:post|tweet)\/?$/;
+const REPLY_IMAGE_NAME = "ai-slop-report";
 const ACTION_SELECTOR = 'button, [role="button"], [role="menuitem"], [role="radio"], label, [tabindex="0"]';
 const AI_SLOP_ICON_PATHS = [
   "M12.5771 0.0207988C13.6947 0.287943 14.3854 0.969029 14.6448 2.07458C14.9188 3.24291 14.2004 4.60029 12.9257 5.02293C12.8198 5.05805 12.7816 5.09675 12.7828 5.2101C12.7889 5.77474 12.7856 6.33948 12.7856 6.92736C12.8841 6.92736 12.9688 6.92739 13.0535 6.92736C14.3574 6.92689 15.6613 6.92837 16.9653 6.92549C18.956 6.9211 20.781 8.47885 21.0734 10.4477C21.1272 10.8096 21.1348 11.1783 21.1647 11.5559C21.6477 11.5357 22.124 11.6173 22.5591 11.847C23.6099 12.4018 24.1759 13.2736 24.211 14.4698C24.2236 14.9022 24.2124 15.3352 24.2126 15.7679C24.2134 17.4461 22.9211 18.7522 21.2432 18.7685C21.2153 18.7688 21.1874 18.7685 21.1397 18.7685C21.1397 19.0878 21.1418 19.3971 21.1393 19.7063C21.1226 21.7759 19.6655 23.4577 17.8219 23.8926C17.5606 23.9542 17.2863 23.9871 17.018 23.9877C13.8101 23.994 10.602 23.9714 7.39437 23.9998C5.61627 24.0156 3.90605 22.8213 3.31057 21.0583C3.08786 20.3989 3.08934 19.724 3.08836 19.045C3.08824 18.9587 3.08834 18.8724 3.08834 18.7902C2.84469 18.7623 2.60263 18.7512 2.36752 18.7048C1.10208 18.4553 0.124831 17.3936 0.0398119 16.1015C-0.00720871 15.3868 -0.0325694 14.6516 0.0806584 13.9496C0.312801 12.5103 1.49424 11.5745 2.95465 11.5565C2.98903 11.5561 3.02339 11.5531 3.10669 11.5488C3.10669 11.3279 3.09553 11.1059 3.10856 10.8853C3.17535 9.75455 3.64905 8.81076 4.47231 8.04889C5.28339 7.2983 6.24717 6.91781 7.3628 6.92536C8.68397 6.9343 10.0053 6.9267 11.3265 6.92627C11.3835 6.92625 11.4405 6.92626 11.5079 6.92626C11.5143 6.88001 11.524 6.84229 11.5241 6.80453C11.5253 6.27951 11.5235 5.75447 11.5271 5.22946C11.5278 5.13132 11.5077 5.08266 11.399 5.04921C10.2496 4.6954 9.5208 3.67545 9.54472 2.46821C9.5686 1.2634 10.5929 0.133458 11.7892 0.010513C12.044 -0.0156623 12.3045 0.014516 12.5771 0.0207988ZM13.5795 8.21159C11.595 8.21155 9.6104 8.21083 7.62585 8.21245C7.41299 8.21262 7.19889 8.21421 6.98749 8.23586C5.53308 8.38479 4.36628 9.62603 4.35782 11.0845C4.34106 13.9747 4.33963 16.865 4.35538 19.7551C4.36081 20.7495 4.80779 21.5492 5.61109 22.139C6.15982 22.5418 6.78185 22.709 7.46074 22.708C10.5933 22.7032 13.7259 22.6998 16.8584 22.7068C18.511 22.7104 19.8703 21.3676 19.8825 19.7351C19.9038 16.9027 19.8882 14.07 19.8864 11.2374C19.8861 10.6864 19.7706 10.1589 19.4798 9.688C18.8824 8.72044 18.0112 8.21652 16.8678 8.21117C15.7833 8.2061 14.6987 8.21106 13.5795 8.21159ZM2.15206 17.2862C2.44375 17.4311 2.74566 17.5231 3.08393 17.4755C3.08393 15.9268 3.08393 14.3891 3.08393 12.8512C3.05934 12.8436 3.04361 12.8352 3.02742 12.8342C2.15974 12.7792 1.36677 13.4232 1.28526 14.2929C1.23971 14.779 1.26278 15.2719 1.26385 15.7618C1.2653 16.4279 1.55501 16.934 2.15206 17.2862ZM22.9287 16.0949C22.9365 15.5139 22.987 14.9296 22.9423 14.3527C22.8692 13.412 22.0277 12.7333 21.1491 12.8546C21.1491 14.3939 21.1491 15.9343 21.1491 17.4735C21.9768 17.5633 22.734 16.9821 22.9287 16.0949ZM10.8922 3.03258C11.1768 3.66753 11.7465 3.97528 12.3986 3.84622C12.9908 3.72901 13.4535 3.15536 13.4407 2.55416C13.4275 1.93856 12.9408 1.38591 12.3454 1.28188C11.395 1.11582 10.5281 2.07143 10.8922 3.03258Z",
@@ -28,10 +32,14 @@ const reportedTweetStatusIds = new Set();
 const reportedChildDisplays = new WeakMap();
 const buttonResetTimeouts = new Map();
 let aiSlopEnabled = false;
+let aiSlopReplyEnabled = false;
 let activeAction;
 
+// X shows the reply composer on its own route. The thread stays mounted below it.
+const isActionRoute = (context) => location.pathname === context.pathname || (context.composing && COMPOSE_PATHNAME.test(location.pathname));
+
 const assertActionActive = (context) => {
-  if (context && (context.signal.aborted || !aiSlopEnabled || location.pathname !== context.pathname || getTweetStatusId(context.tweet) !== context.statusId)) {
+  if (context && (context.signal.aborted || !aiSlopEnabled || !isActionRoute(context) || getTweetStatusId(context.tweet) !== context.statusId)) {
     throw new Error("AI Slop action canceled");
   }
 };
@@ -169,7 +177,7 @@ const getTweetAuthorHandle = (tweet) => {
 
 const getStatusIdFromPathname = (pathname) => pathname.match(/^\/[^/]+\/status\/(\d+)/)?.[1] || null;
 
-const getCurrentStatusId = () => getStatusIdFromPathname(window.location.pathname);
+const getCurrentStatusId = () => getStatusIdFromPathname(activeAction?.composing && isActionRoute(activeAction) ? activeAction.pathname : window.location.pathname);
 
 const getTweetStatusId = (tweet) => {
   const statusLink = getTweetStatusLink(tweet);
@@ -271,6 +279,53 @@ const reportTweetAsSpam = async (tweet, context) => {
   return completeSpamReport(context);
 };
 
+const discardReplyComposer = async () => {
+  if (!getLatestDialog()?.querySelector('[data-testid="tweetButton"]')) return;
+
+  closeDialogIfPresent();
+  // A composer with an attachment asks whether to save the draft.
+  await waitFor(() => clickDialogAction([/^discard$/i]) || !getLatestDialog(), 3000).catch(() => {});
+};
+
+// Posts the framed capture as a reply. Any failure discards the draft and stops the workflow before the report.
+const postScreenshotReply = async (tweet, authorHandle, context) => {
+  const replyButton = Array.from(tweet.querySelectorAll('[data-testid="reply"]')).find((button) => button.closest(selectors.tweet) === tweet && !button.closest('[data-testid="quoteTweet"], div[role="link"]'));
+  if (!isActionable(replyButton)) throw new Error("X does not allow a reply to this post");
+
+  const capture = await captureElement(tweet, { hideSelector: `.${CONTROL_CLASS}` });
+  const image = await canvasToImageBlob(frameAiSlopScreenshot(capture, { iconPaths: AI_SLOP_ICON_PATHS }));
+  assertActionActive(context);
+  if (getLatestDialog() || getLatestMenu()) throw new Error("Close the current X dialog or menu before using AI Slop");
+
+  context.composing = true;
+  try {
+    replyButton.click();
+    const composer = await waitFor(() => {
+      const dialog = getLatestDialog();
+      return dialog?.querySelector('input[type="file"]') && dialog.querySelector('[data-testid="tweetButton"]') ? dialog : null;
+    }, 6000, context);
+    if (!new RegExp(`@${escapeRegExp(authorHandle)}\\b`, "i").test(normalizeText(composer.innerText))) throw new Error("X reply composer does not identify the expected author");
+
+    const files = new DataTransfer();
+    files.items.add(new File([image], `${REPLY_IMAGE_NAME}.${image.type === "image/jpeg" ? "jpg" : "png"}`, { type: image.type }));
+    const input = composer.querySelector('input[type="file"]');
+    input.files = files.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+
+    const postButton = await waitFor(() => {
+      const button = composer.querySelector('[data-testid="tweetButton"]');
+      return composer.querySelector('[data-testid="attachments"]') && isActionable(button) ? button : null;
+    }, 20000, context);
+    postButton.click();
+    await waitFor(() => !composer.isConnected && location.pathname === context.pathname, 20000, context);
+  } catch (error) {
+    await discardReplyComposer().catch(() => {});
+    throw error;
+  } finally {
+    context.composing = false;
+  }
+};
+
 const blockTweetAuthor = async (tweet, authorHandle, context) => {
   if (!authorHandle) throw new Error("Could not identify the X post author");
   const blockPatterns = [new RegExp(`^block\\s+@?${escapeRegExp(authorHandle)}$`, "i")];
@@ -356,7 +411,7 @@ const armAiSlopButton = (button, target, tweet) => {
   clearConfirmationTimeout(button);
   confirmationStartTimes.set(button, Date.now());
   confirmationIdentities.set(button, { statusId: getTweetStatusId(tweet), authorHandle: getTweetAuthorHandle(tweet), pathname: location.pathname });
-  setButtonState(button, "confirming", `Click again within 3 seconds to report this post as spam and block ${target}`);
+  setButtonState(button, "confirming", `Click again within 3 seconds to ${aiSlopReplyEnabled ? "reply with a screenshot, " : ""}report this post as spam and block ${target}`);
   addCountdownRing(button);
 
   const timeout = setTimeout(() => {
@@ -584,6 +639,10 @@ const handleAiSlopClick = async (event) => {
     clearConfirmationTimeout(button);
     removeCountdownRing(button);
     setButtonState(button, "loading", "working");
+    if (aiSlopReplyEnabled) {
+      await postScreenshotReply(tweet, authorHandle, context);
+      await sleep(600, context);
+    }
     await reportTweetAsSpam(tweet, context);
     await sleep(300, context);
     await blockTweetAuthor(tweet, authorHandle, context);
@@ -647,7 +706,7 @@ const removeAiSlopButtons = () => {
 };
 
 const removeIneligibleAiSlopButtons = () => {
-  if (activeAction && (activeAction.pathname !== location.pathname || getTweetStatusId(activeAction.tweet) !== activeAction.statusId)) activeAction.controller.abort();
+  if (activeAction && (!isActionRoute(activeAction) || getTweetStatusId(activeAction.tweet) !== activeAction.statusId)) activeAction.controller.abort();
   document.querySelectorAll(`.${TWEET_CLASS}`).forEach((tweet) => {
     if (isEligibleReplyTweet(tweet)) {
       tweet.querySelectorAll(`.${BUTTON_CLASS}`).forEach((button) => {
@@ -837,6 +896,10 @@ const addAiSlopStyles = () => {
 
     `
   );
+};
+
+export const changeAiSlopReply = (aiSlopReply) => {
+  aiSlopReplyEnabled = aiSlopReply === "on";
 };
 
 export const changeAiSlopButton = (aiSlopButton) => {
